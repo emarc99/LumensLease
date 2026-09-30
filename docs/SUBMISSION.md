@@ -86,7 +86,36 @@ As required by the **AWS Zero to Shipped** rules:
 
 ---
 
-## 5. Hackathon Tags
+## 5. Development Process & How the Coding Agent Helped Us Ship
 
-* **App Category**: `#commercial-potential`
+From initial concept to a live application running on AWS edge infrastructure, the AI coding agent acted as an autonomous pair-programmer and cloud systems engineer:
+
+1. **Problem Discovery & Legal Domain Architecture**:
+   - The agent helped unpack the realities of the Ibadan rental market—specifically addressing the street caretaker cartel, non-refundable inspection fee rackets, and the IBEDC power crisis.
+   - Researched and integrated the statutory legal framework of the **Recovery of Premises Law of Oyo State (Cap 144, Laws of Oyo State 2000)**, incorporating an accredited solicitor review protocol rather than risky, unenforceable DIY software templates.
+
+2. **Full-Stack Engineering with Next.js 16 & Turbopack**:
+   - Built a high-performance Next.js 16 App Router architecture configured with static export (`output: 'export'`) for instant CDN edge delivery.
+   - Crafted a custom 90s Retro-Tech design token system in vanilla CSS (without Tailwind bloat), featuring high-contrast dark obsidian cards, tactile drop shadows, and neon utility indicators.
+   - Engineered the **Landlord Voice Studio** using the Web Speech API and AWS Bedrock extraction prompts to eliminate complex tech forms for older property owners.
+
+3. **Autonomous Cloud Infrastructure Provisioning**:
+   - Connected directly to the user's terminal and authenticated AWS console environment (`Account: 226579698869`, `Region: us-east-1`).
+   - Programmed and executed [deploy_s3.py](file:///c:/Users/LENOVO/Documents/web2-3%20hacks/aws-zero/deploy_s3.py) to configure Amazon S3 website hosting, public read bucket policies, and cross-region asset sync.
+   - Programmed and executed [deploy_cloudfront.py](file:///c:/Users/LENOVO/Documents/web2-3%20hacks/aws-zero/deploy_cloudfront.py) to provision a global CloudFront edge distribution (`E25APX0VCRR5EM`), routing traffic through the **Lagos, Nigeria Edge Point of Presence (`LOS50-P5`)** for sub-100ms West African response times.
+
+4. **Iterative Diagnostics & Quality Verification**:
+   - Diagnosed and resolved SSR `localStorage` hydration guards during Next.js static prerendering.
+   - Elevated badge contrast and image container scrims to ensure utility telemetry (`DIRECT OWNER • ₦0 AGENT CUT` and `7.5kVA SOLAR BACKED`) is bold and legible over architectural photography.
+   - Synthesized a clean 28-commit chronological git history and synchronized all assets to GitHub.
+
+---
+
+## 6. Official Hackathon Designation & Live Links
+
+* **Live Public Application (CloudFront HTTPS)**: [https://d1dco6ew3il05x.cloudfront.net](https://d1dco6ew3il05x.cloudfront.net)
+* **Direct AWS S3 Website**: [http://lockhouse-direct-226579698869.s3-website-us-east-1.amazonaws.com](http://lockhouse-direct-226579698869.s3-website-us-east-1.amazonaws.com)
+* **Official GitHub Repository**: [https://github.com/emarc99/lockhouse](https://github.com/emarc99/lockhouse)
+* **App Category**: `#commercial-potential` *(Secondary: `#daily-life-enhancement`)*
 * **Focus Lane**: `#startups`
+

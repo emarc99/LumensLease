@@ -11,7 +11,25 @@ export default function PropertyCard({ property }: { property: PropertyListing }
 
   const agencySavings = property.annualRent * 0.20; // 10% Agency + 10% Legal saved
 
+  // Determine power badge label based on verified utility data
+  const getPowerBadgeLabel = () => {
+    const { backupPowerType, inverterCapacityKva, gridHoursPerDay } = property.utility;
+    if (inverterCapacityKva && inverterCapacityKva > 0) {
+      return `${inverterCapacityKva}kVA SOLAR BACKED`;
+    }
+    if (backupPowerType === 'solar_inverter' || backupPowerType === 'hybrid') {
+      return inverterCapacityKva ? `${inverterCapacityKva}kVA SOLAR BACKED` : 'SOLAR INVERTER BACKED';
+    }
+    if (backupPowerType === 'generator') {
+      return 'CENTRAL GENERATOR BACKED';
+    }
+    if (gridHoursPerDay && gridHoursPerDay >= 16) {
+      return `${gridHoursPerDay}H DAILY IBEDC GRID`;
+    }
+    return 'VERIFIED UTILITY SCORECARD';
+  };
 
+  const powerBadge = getPowerBadgeLabel();
 
   return (
     <div className="retro-card" style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
@@ -53,19 +71,51 @@ export default function PropertyCard({ property }: { property: PropertyListing }
         {/* Top Badges */}
         <div style={{
           position: 'absolute',
-          top: '10px',
-          left: '10px',
+          top: '12px',
+          left: '12px',
           display: 'flex',
           flexDirection: 'column',
+          alignItems: 'flex-start',
           gap: '6px',
-          zIndex: 2
+          zIndex: 10
         }}>
-          <span className="retro-badge badge-zero-cut" style={{ boxShadow: '2px 2px 0px #000' }}>
-            <Check size={12} strokeWidth={3} /> DIRECT OWNER • ₦0 AGENT CUT
+          <span
+            className="retro-badge badge-zero-cut badge-overlay"
+            style={{
+              background: '#041d13',
+              backgroundColor: 'rgba(4, 29, 19, 0.95)',
+              border: '1.5px solid #10b981',
+              color: '#34d399',
+              boxShadow: '0 3px 8px rgba(0, 0, 0, 0.8), 2px 2px 0px #000',
+              fontWeight: 800,
+              fontSize: '0.74rem',
+              letterSpacing: '0.04em',
+              padding: '4px 9px',
+              whiteSpace: 'nowrap'
+            }}
+          >
+            <Check size={13} strokeWidth={3} color="#34d399" />
+            <span>DIRECT OWNER • ₦0 AGENT CUT</span>
           </span>
-          {property.utility.backupPowerType === 'solar_inverter' && (
-            <span className="retro-badge badge-solar" style={{ boxShadow: '2px 2px 0px #000' }}>
-              <Zap size={12} /> {property.utility.inverterCapacityKva}kVA SOLAR BACKED
+
+          {powerBadge && (
+            <span
+              className="retro-badge badge-solar badge-overlay"
+              style={{
+                background: '#241503',
+                backgroundColor: 'rgba(36, 21, 3, 0.95)',
+                border: '1.5px solid #f59e0b',
+                color: '#fbbf24',
+                boxShadow: '0 3px 8px rgba(0, 0, 0, 0.8), 2px 2px 0px #000',
+                fontWeight: 800,
+                fontSize: '0.74rem',
+                letterSpacing: '0.04em',
+                padding: '4px 9px',
+                whiteSpace: 'nowrap'
+              }}
+            >
+              <Zap size={13} fill="#fbbf24" color="#fbbf24" />
+              <span>{powerBadge}</span>
             </span>
           )}
         </div>

@@ -97,20 +97,62 @@ export default function PropertyDetailModal() {
                   zIndex: 2
                 }} />
 
+                {/* Badges Over Main Dossier Image */}
                 <div style={{
                   position: 'absolute',
-                  top: '10px',
-                  left: '10px',
-                  background: 'rgba(0,0,0,0.85)',
-                  border: '1px solid var(--emerald-primary)',
-                  borderRadius: 'var(--radius-sm)',
-                  padding: '4px 8px',
-                  fontFamily: 'var(--font-mono)',
-                  fontSize: '0.75rem',
-                  color: 'var(--emerald-light)',
-                  fontWeight: 700
+                  top: '12px',
+                  left: '12px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'flex-start',
+                  gap: '6px',
+                  zIndex: 10
                 }}>
-                  ✓ AI VERIFIED INFRASTRUCTURE
+                  <span
+                    className="retro-badge badge-zero-cut badge-overlay"
+                    style={{
+                      background: '#041d13',
+                      backgroundColor: 'rgba(4, 29, 19, 0.95)',
+                      border: '1.5px solid #10b981',
+                      color: '#34d399',
+                      boxShadow: '0 3px 8px rgba(0, 0, 0, 0.8), 2px 2px 0px #000',
+                      fontWeight: 800,
+                      fontSize: '0.74rem',
+                      letterSpacing: '0.04em',
+                      padding: '4px 9px',
+                      whiteSpace: 'nowrap'
+                    }}
+                  >
+                    <Check size={13} strokeWidth={3} color="#34d399" />
+                    <span>DIRECT OWNER • ₦0 AGENT CUT</span>
+                  </span>
+
+                  <span
+                    className="retro-badge badge-solar badge-overlay"
+                    style={{
+                      background: '#241503',
+                      backgroundColor: 'rgba(36, 21, 3, 0.95)',
+                      border: '1.5px solid #f59e0b',
+                      color: '#fbbf24',
+                      boxShadow: '0 3px 8px rgba(0, 0, 0, 0.8), 2px 2px 0px #000',
+                      fontWeight: 800,
+                      fontSize: '0.74rem',
+                      letterSpacing: '0.04em',
+                      padding: '4px 9px',
+                      whiteSpace: 'nowrap'
+                    }}
+                  >
+                    <Zap size={13} fill="#fbbf24" color="#fbbf24" />
+                    <span>
+                      {prop.utility.inverterCapacityKva && prop.utility.inverterCapacityKva > 0
+                        ? `${prop.utility.inverterCapacityKva}kVA SOLAR BACKED`
+                        : prop.utility.backupPowerType === 'solar_inverter' || prop.utility.backupPowerType === 'hybrid'
+                        ? 'SOLAR INVERTER BACKED'
+                        : prop.utility.backupPowerType === 'generator'
+                        ? 'CENTRAL GENERATOR BACKED'
+                        : `${prop.utility.gridHoursPerDay}H DAILY IBEDC GRID`}
+                    </span>
+                  </span>
                 </div>
               </div>
 

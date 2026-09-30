@@ -13,12 +13,12 @@
 
 When I completed my training at the academy and set out to find an apartment in **Ibadan, Oyo State**, I was confronted with the harsh, opaque reality of the Nigerian rental market.
 
-In cities like Ibadan, young graduates, university staff, and remote tech workers are forced to deal with an aggressive cartel of street "caretakers" and "agents". Before you even see a single apartment, agents demand non-refundable ₦3,000–₦5,000 "inspection fees". When you finally find a house, they slap on **10% Agency fee + 10% Legal/Agreement fee + Caution fee + arbitrary maintenance levies**, inflating the total move-in cost by **50% or more on top of the annual rent**.
+In cities like Ibadan, young graduates, university staff, and remote tech workers are forced to deal with an unregulated network of street "caretakers" and middleman agents. Before you even see a single apartment, agents demand non-refundable ₦3,000–₦5,000 "inspection fees". When you finally find a house, they slap on **10% Agency fee + 10% Legal/Agreement fee + Caution fee + arbitrary maintenance levies**, inflating the total move-in cost by **50% or more on top of the annual rent**.
 
 Even worse, agents hide the daily infrastructure realities:
-* **The "Light" (Electricity) Trap**: Renters only discover *after paying* that the IBEDC feeder line in that neighborhood only gives 3 hours of light a week, leaving remote workers unable to charge workstations or run fans.
-* **The Water Trap**: Boreholes that pump brown mud or run dry every dry season.
-* **The Legal Illusion**: Tenants pay ₦150,000–₦300,000 for a "legal agreement" that is just a blurry, 2-page photocopy from 1998 with handwritten names, offering zero legal protection in an Oyo State court.
+* **The "Light" (Electricity) Deficit**: Renters only discover *after paying* that the IBEDC feeder line in that neighborhood only gives 3 hours of light a week, leaving remote workers unable to charge workstations or run fans.
+* **The Water Supply Deficit**: Boreholes that pump brown mud or run dry every dry season.
+* **Informal Tenancy Agreements**: Tenants pay ₦150,000–₦300,000 for a "legal agreement" that is just a blurry, 2-page photocopy from 1998 with handwritten names, offering zero legal protection in an Oyo State court.
 
 I asked myself: **Why is there no platform where landlords and tenants connect directly, eliminate the 50% agent cut, guarantee power/water transparency, and standardize legal tenancy agreements under Oyo State Law?**
 
@@ -31,7 +31,7 @@ That lived frustration inspired **LockHouse**.
 LockHouse is an autonomous direct-to-landlord rental intelligence platform built on Next.js and deployed live on AWS:
 
 1. **60-Second Landlord Voice Studio (Zero Tech Barrier for Older Owners)**:
-   - Older landlords in Bodija, Oluyole, and Agodi GRA hate 40-field tech forms. With LockHouse, they tap a retro mic and speak naturally in English or Pidgin:
+   - Older landlords in Bodija, Oluyole, and Agodi GRA struggle with complex 40-field online forms. With LockHouse, they tap a retro mic and speak naturally in English or Pidgin:
      > *"I have a clean 2-bedroom flat at 12 Osuntokun Avenue, Old Bodija. Rent is 1.6 million Naira. 5kVA solar inverter with 16 hours of IBEDC light, dedicated prepaid meter, treated borehole water, and night security guard. Looking for a quiet working professional."*
    - Our **AWS Bedrock AI Agent** transcribes the speech and extracts structured listing metadata, pricing, utility telemetry, and house rules automatically.
 2. **The "Light & Utility Truth Scorecard"**:
@@ -44,11 +44,11 @@ LockHouse is an autonomous direct-to-landlord rental intelligence platform built
    - The AI inspects uploaded photos, detecting physical hardware: Conlog prepaid meters, solar inverter battery banks, and secure compound gates.
 4. **Direct Landlord-Tenant Chat Room**:
    - In-app direct messaging with pre-built quick inquiries (*"How many hours does the solar battery last?"*, *"Can I inspect this Saturday?"*).
-   - Direct booking of **100% free inspections** (permanently eliminating the street inspection fee scam).
+   - Direct booking of **100% free inspections** (permanently eliminating middleman inspection charges).
 5. **Oyo State Statutory Tenancy Agreement Generator**:
    - Governed by the **Recovery of Premises Law of Oyo State (Cap 144, Laws of Oyo State 2000)**.
-   - Replaces the 10% legal photocopy racket with a standardized statutory contract featuring custom covenants (prepaid meter autonomy, solar inverter battery protection, borehole water maintenance), an official **₦0 Middleman Commission Stamp**, and SHA-256 tamper-proof hash.
-6. **Interactive Extortion Savings Calculator**:
+   - Replaces the informal legal fee markups with a standardized statutory contract featuring custom covenants (prepaid meter autonomy, solar inverter battery protection, borehole water maintenance), an official **₦0 Middleman Commission Stamp**, and SHA-256 tamper-proof hash.
+6. **Interactive Tenant Savings Calculator**:
    - Allows any tenant or landlord to calculate exact cash saved from eliminating 10% agency + 10% legal fees.
 
 ---
@@ -91,12 +91,12 @@ As required by the **AWS Zero to Shipped** rules:
 From initial concept to a live application running on AWS edge infrastructure, the AI coding agent acted as an autonomous pair-programmer and cloud systems engineer:
 
 1. **Problem Discovery & Legal Domain Architecture**:
-   - The agent helped unpack the realities of the Ibadan rental market—specifically addressing the street caretaker cartel, non-refundable inspection fee rackets, and the IBEDC power crisis.
+   - The agent helped unpack the realities of the Ibadan rental market—specifically addressing middleman agent cuts, non-refundable inspection fees, and the IBEDC power deficit.
    - Researched and integrated the statutory legal framework of the **Recovery of Premises Law of Oyo State (Cap 144, Laws of Oyo State 2000)**, incorporating an accredited solicitor review protocol rather than risky, unenforceable DIY software templates.
 
 2. **Full-Stack Engineering with Next.js 16 & Turbopack**:
    - Built a high-performance Next.js 16 App Router architecture configured with static export (`output: 'export'`) for instant CDN edge delivery.
-   - Crafted a custom 90s Retro-Tech design token system in vanilla CSS (without Tailwind bloat), featuring high-contrast dark obsidian cards, tactile drop shadows, and neon utility indicators.
+   - Crafted a custom 90s Retro-Tech design token system in vanilla CSS (without heavy external CSS frameworks), featuring high-contrast dark obsidian cards, tactile drop shadows, and neon utility indicators.
    - Engineered the **Landlord Voice Studio** using the Web Speech API and AWS Bedrock extraction prompts to eliminate complex tech forms for older property owners.
 
 3. **Autonomous Cloud Infrastructure Provisioning**:

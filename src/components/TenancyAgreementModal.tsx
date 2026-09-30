@@ -95,7 +95,7 @@ export default function TenancyAgreementModal() {
               GOVERNED BY THE RECOVERY OF PREMISES LAW OF OYO STATE (CAP 144, LAWS OF OYO STATE 2000)
             </div>
             <div style={{ fontSize: '0.78rem', color: '#0369a1', fontWeight: 600, marginTop: '2px' }}>
-              DIRECT OWNER-TO-TENANT CONTRACT • ₦0 MIDDLEMAN COMMISSION
+              DIRECT OWNER-TO-TENANT CONTRACT • ₦0 MIDDLEMAN COMMISSION • ACCREDITED SOLICITOR PROTOCOL
             </div>
             <div style={{ fontSize: '0.75rem', fontFamily: 'monospace', color: '#64748b', marginTop: '4px' }}>
               LOCKHOUSE CONTRACT REF: LH-OYO-{prop.id.toUpperCase()}-2026 • JURISDICTION: OYO STATE COURTS

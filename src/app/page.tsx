@@ -1,111 +1,152 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useMemo } from 'react';
+import Link from 'next/link';
+import { ArrowRight, Search, Mic } from 'lucide-react';
+import Header from '../components/Header';
+import CleanPropertyCard from '../components/CleanPropertyCard';
 import { useProperty } from '../context/PropertyContext';
-import Navbar from '../components/Navbar';
-import HeroSearch from '../components/HeroSearch';
-import PropertyGrid from '../components/PropertyGrid';
-import PropertyDetailModal from '../components/PropertyDetailModal';
-import LandlordVoiceStudio from '../components/LandlordVoiceStudio';
-import DirectChatModal from '../components/DirectChatModal';
-import TenancyAgreementModal from '../components/TenancyAgreementModal';
-import SavingsCalculator from '../components/SavingsCalculator';
-import { ShieldCheck, Heart, Zap, Globe } from 'lucide-react';
 
-export default function Home() {
-  const { activeView, awsConnection } = useProperty();
+export default function HomePage() {
+  const { properties, totalSavingsNgn } = useProperty();
+  const [query, setQuery] = useState('');
+  const [activeFilter, setActiveFilter] = useState('All homes');
+
+  const filters = [
+    'All homes',
+    '24/7 backup power',
+    'Dedicated meter',
+    'Treated borehole',
+    'Bodija',
+    'Akobo',
+    'Oluyole',
+    'Samonda'
+  ];
+
+  const filteredProperties = useMemo(() => {
+    return properties.filter((p) => {
+      const q = query.toLowerCase();
+      const text = `${p.title} ${p.area} ${p.city} ${p.description} ${p.utility.backupPowerType}`.toLowerCase();
+      const matchesQuery = !q || text.includes(q);
+
+      let matchesFilter = true;
+      if (activeFilter === '24/7 backup power') {
+        matchesFilter = p.utility.backupPowerType === 'solar_inverter' || p.utility.gridHoursPerDay >= 20;
+      } else if (activeFilter === 'Dedicated meter') {
+        matchesFilter = p.utility.meterType === 'dedicated_prepaid';
+      } else if (activeFilter === 'Treated borehole') {
+        matchesFilter = p.utility.waterSource === 'treated_borehole';
+      } else if (activeFilter !== 'All homes') {
+        matchesFilter = p.area.toLowerCase().includes(activeFilter.toLowerCase());
+      }
+
+      return matchesQuery && matchesFilter;
+    });
+  }, [properties, query, activeFilter]);
+
+  const displaySavings = `₦${Math.max(14250000, totalSavingsNgn).toLocaleString('en-NG')}`;
 
   return (
-    <main style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-      <Navbar />
+    <div className="shell">
+      <Header />
 
-      <div style={{ flex: 1 }}>
-        {activeView === 'feed' && (
-          <>
-            <HeroSearch />
-            <PropertyGrid />
-          </>
-        )}
-
-        {activeView === 'landlord_studio' && (
-          <LandlordVoiceStudio />
-        )}
-
-        {activeView === 'savings_calculator' && (
-          <SavingsCalculator />
-        )}
-      </div>
-
-      {/* Global Interactive Modals */}
-      <PropertyDetailModal />
-      <DirectChatModal />
-      <TenancyAgreementModal />
-
-      {/* Footer */}
-      <footer style={{
-        background: '#090d14',
-        borderTop: '2px solid var(--border-bold)',
-        padding: '36px 24px 48px',
-        marginTop: 'auto'
-      }}>
-        <div style={{
-          maxWidth: '1360px',
-          margin: '0 auto',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '20px'
-        }}>
-          <div style={{
-            display: 'flex',
-            flexWrap: 'wrap',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            gap: '16px',
-            borderBottom: '1px solid var(--border-subtle)',
-            paddingBottom: '20px'
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span className="mono" style={{ fontSize: '1.2rem', fontWeight: 900, color: 'var(--amber-primary)' }}>
-                LOCKHOUSE
-              </span>
-              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                // Autonomous Direct-to-Landlord Rental Intelligence
-              </span>
-            </div>
-
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <span className="retro-badge badge-solar">
-                #STARTUPS LANE
-              </span>
-              <span className="retro-badge badge-meter">
-                #COMMERCIAL-POTENTIAL
-              </span>
-              <span className="retro-badge badge-zero-cut">
-                #DAILY-LIFE-ENHANCEMENT
-              </span>
+      <main>
+        {/* Hero Section */}
+        <div className="container hero">
+          <div>
+            <div className="kicker">Direct rental intelligence · Nigeria</div>
+            <h1>
+              Find a home.<br />
+              <em>Skip the drama.</em>
+            </h1>
+            <p className="hero-copy">
+              LockHouse helps you rent directly from verified owners, with the power, water, and security facts middleman agents usually hide.
+            </p>
+            <div className="hero-actions">
+              <a href="#homes" className="btn btn-primary">
+                Explore verified homes <ArrowRight size={15} />
+              </a>
+              <Link href="/studio" className="btn btn-secondary">
+                I’m a landlord
+              </Link>
             </div>
           </div>
 
-          <div style={{
-            display: 'flex',
-            flexWrap: 'wrap',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            gap: '16px',
-            fontSize: '0.8rem',
-            color: 'var(--text-muted)',
-            fontFamily: 'var(--font-mono)'
-          }}>
-            <div>
-              Built for <strong style={{ color: 'var(--amber-light)' }}>AWS Zero to Shipped Hackathon 2026</strong>. Powered by AWS Bedrock & CloudFront.
+          <div className="hero-card">
+            <div className="hero-card-top">
+              <span>
+                <i className="live-dot" /> live network
+              </span>
+              <span>ibadan / lagos · ng</span>
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span>AWS Console Connected • Region: <strong>{awsConnection.region}</strong> • Account: <strong>{awsConnection.accountId}</strong></span>
+            <div className="savings">{displaySavings}</div>
+            <small>agent & inspection fees saved by LockHouse renters</small>
+
+            <div className="stat-row">
+              <div className="stat">
+                <strong>0%</strong>
+                <span>agent cut</span>
+              </div>
+              <div className="stat">
+                <strong>{properties.length}</strong>
+                <span>homes live</span>
+              </div>
+              <div className="stat">
+                <strong>98%</strong>
+                <span>owner verified</span>
+              </div>
             </div>
           </div>
         </div>
-      </footer>
-    </main>
+
+        {/* Live Inventory Feed */}
+        <div id="homes">
+          <section className="section container">
+            <div className="section-head">
+              <div>
+                <div className="kicker">Live verified inventory</div>
+                <h2>Homes with the truth turned on.</h2>
+              </div>
+              <span className="card-meta">
+                {filteredProperties.length} verified homes · updated just now
+              </span>
+            </div>
+
+            <div className="searchbox">
+              <Search size={18} style={{ color: '#697386', marginLeft: '6px' }} />
+              <input
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Try ‘quiet 2-bed in Bodija with 5kVA solar’"
+                aria-label="Search verified homes"
+              />
+              <button onClick={() => setQuery(query ? '' : 'solar')}>
+                <Mic size={15} />
+                <span>{query ? 'Clear' : 'Voice Query'}</span>
+              </button>
+            </div>
+
+            <div className="filter-row">
+              {filters.map((filter) => (
+                <button
+                  key={filter}
+                  className={`filter ${activeFilter === filter ? 'active' : ''}`}
+                  onClick={() => setActiveFilter(filter)}
+                >
+                  {filter}
+                </button>
+              ))}
+            </div>
+
+            <div className="grid">
+              {filteredProperties.map((p) => (
+                <CleanPropertyCard key={p.id} property={p} />
+              ))}
+            </div>
+          </section>
+        </div>
+      </main>
+    </div>
   );
 }

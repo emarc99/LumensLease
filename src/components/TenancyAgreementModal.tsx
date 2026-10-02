@@ -38,41 +38,52 @@ export default function TenancyAgreementModal() {
     onClick={() => setActiveAgreementProperty(null)}
     >
       <div
-        className="retro-window"
         style={{
           maxWidth: '850px',
           width: '100%',
           maxHeight: '92vh',
           display: 'flex',
           flexDirection: 'column',
-          overflow: 'hidden'
+          overflow: 'hidden',
+          borderRadius: '16px',
+          backgroundColor: '#ffffff',
+          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.35)',
+          border: '1px solid #e2e8f0'
         }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="window-header">
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '14px 20px',
+          borderBottom: '1px solid #e2e8f0',
+          background: '#f8fafc'
+        }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <ShieldCheck size={18} color="var(--emerald-primary)" />
-            <span className="mono" style={{ fontSize: '0.85rem', fontWeight: 700 }}>
-              LOCKHOUSE DIRECT TENANCY AGREEMENT // ₦0 COMMISSION LEGAL DRAFT
+            <ShieldCheck size={18} color="#15803d" />
+            <span style={{ fontSize: '0.85rem', fontWeight: 700, letterSpacing: '-0.02em', color: '#0f172a' }}>
+              LOCKHOUSE DIRECT TENANCY AGREEMENT · ₦0 COMMISSION STATUTORY DRAFT
             </span>
           </div>
 
           <div style={{ display: 'flex', gap: '8px' }}>
             <button
               onClick={handlePrint}
-              className="retro-btn retro-btn-amber"
-              style={{ padding: '4px 10px', fontSize: '0.75rem' }}
+              className="btn btn-primary"
+              style={{ padding: '6px 12px', fontSize: '0.78rem' }}
             >
               <Printer size={14} />
-              <span>Print Agreement</span>
+              <span>Print / Save PDF</span>
             </button>
 
             <button
               onClick={() => setActiveAgreementProperty(null)}
-              style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontFamily: 'var(--font-mono)' }}
+              className="btn btn-secondary"
+              style={{ padding: '6px 12px', fontSize: '0.78rem' }}
             >
-              [CLOSE ✕]
+              <X size={14} /> Close
             </button>
           </div>
         </div>

@@ -22,6 +22,9 @@ export default function Header() {
           <Link href="/" className={pathname === '/' ? 'active' : ''}>
             Explore homes
           </Link>
+          <Link href="/calculator" className={pathname === '/calculator' ? 'active' : ''}>
+            Savings calculator
+          </Link>
           <Link href="/messages" className={pathname === '/messages' ? 'active' : ''}>
             Messages
           </Link>

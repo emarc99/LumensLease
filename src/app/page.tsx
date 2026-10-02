@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { ArrowRight, Search, Mic } from 'lucide-react';
 import Header from '../components/Header';
 import CleanPropertyCard from '../components/CleanPropertyCard';
+import SavingsCalculator from '../components/SavingsCalculator';
 import { useProperty } from '../context/PropertyContext';
 
 export default function HomePage() {
@@ -97,6 +98,12 @@ export default function HomePage() {
                 <span>owner verified</span>
               </div>
             </div>
+
+            <div style={{ marginTop: '16px', paddingTop: '12px', borderTop: '1px solid rgba(0,0,0,0.06)' }}>
+              <a href="#calculator" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.82rem', fontWeight: 700, color: 'var(--ink)' }}>
+                Calculate your exact savings <ArrowRight size={13} />
+              </a>
+            </div>
           </div>
         </div>
 
@@ -144,6 +151,11 @@ export default function HomePage() {
                 <CleanPropertyCard key={p.id} property={p} />
               ))}
             </div>
+          </section>
+
+          {/* Interactive Savings Calculator Section */}
+          <section id="calculator" className="section container" style={{ borderTop: '1px solid var(--line)', paddingTop: '64px', marginTop: '32px' }}>
+            <SavingsCalculator />
           </section>
         </div>
       </main>

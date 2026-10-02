@@ -106,3 +106,27 @@
 * **Zero-Agent Tenancy Agreement Generator**:
   - One-click generates a clean, legally binding, printable Standard Residential Tenancy Agreement customized with tenant and landlord names, property address, rent, and house rules.
   - Shows ₦0 agency fee stamp.
+
+---
+
+## 3. Production Roadmap & Cloud Backend Architecture (Phase 2)
+
+While the hackathon release is engineered as an ultra-fast, zero-cold-start Edge application on Amazon CloudFront and S3 to provide an isolated, deterministic sandbox for evaluators, the production commercial deployment transitions to a persistent AWS serverless backend:
+
+1. **Amazon DynamoDB (Single-Table Design)**:
+   - Primary Key structure: Partition Key `PK = PROPERTY#<id>`, Sort Key `SK = METADATA#LATEST`.
+   - Stores real-time utility telemetry (IBEDC feeder logs, solar inverter capacity, borehole maintenance schedules).
+   - Global Secondary Indexes (GSIs) for sub-5ms filtering by city, neighborhood, rent threshold, and verified solar/meter status.
+   - TTL-enabled cache for inspection slots and booking requests.
+
+2. **AWS AppSync & GraphQL Subscriptions**:
+   - Powers real-time, bidirectional messaging between verified landlords and prospective tenants without third-party websocket servers.
+   - Built-in conflict resolution and offline-first mobile sync for reliable operation over low-bandwidth West African cellular connections.
+
+3. **Amazon Cognito User Pools**:
+   - Granular role-based access control: `Landlord` vs. `Tenant` vs. `Accredited Solicitor`.
+   - Integrated identity verification (NIN / BVN validation) to guarantee 100% direct property ownership and eliminate impersonation or illegal subletting.
+
+4. **AWS Bedrock Runtime Agent (Serverless Microservice)**:
+   - Dedicated AWS Lambda microservice invoking Amazon Bedrock (`Claude 3.5 Sonnet` / `Amazon Titan Multimodal`) via streaming API for server-side audio transcription, Pidgin translation, and computer vision hardware audits.
+

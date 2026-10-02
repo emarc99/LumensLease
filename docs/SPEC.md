@@ -125,3 +125,63 @@ export interface TenancyAgreementData {
    - Prompts tuned for West African real estate nuances (parsing references to "NEPA", "light", "pumping water", "inverter", "compound gate").
 3. **Deployment Strategy**:
    - Automated build producing a production-ready SPA bundle deployed to AWS S3 + CloudFront distribution or AWS Amplify CLI, providing a live HTTPS public URL accessible worldwide.
+
+---
+
+## 5. Production Cloud Architecture Roadmap (Phase 2)
+
+```mermaid
+graph TD
+    subgraph Client ["Client Layer (Next.js 16 App Router)"]
+        UI[Retro-Tech Command Console]
+        Voice[Web Audio / Speech Stream]
+        Chat[Direct Landlord-Tenant Chat]
+    end
+
+    subgraph Edge ["AWS Edge Infrastructure"]
+        CF[Amazon CloudFront CDN (Global + Lagos POP LOS50-P5)]
+        S3[Amazon S3 Static & Media Storage]
+    end
+
+    subgraph Auth ["Security & Identity"]
+        Cognito[Amazon Cognito User Pools<br/>Role: Landlord / Tenant / Solicitor]
+    end
+
+    subgraph Compute ["Serverless Application Layer"]
+        AppSync[AWS AppSync GraphQL API<br/>Real-Time Subscriptions]
+        LambdaBedrock[AWS Lambda: Bedrock Agent Processor]
+    end
+
+    subgraph AI ["Foundation Models"]
+        BedrockFM[Amazon Bedrock<br/>Claude 3.5 Sonnet / Titan Multimodal]
+    end
+
+    subgraph Database ["Persistent Data Layer"]
+        DDB[(Amazon DynamoDB<br/>Single-Table Design)]
+    end
+
+    UI --> CF
+    CF --> S3
+    UI --> Cognito
+    UI --> AppSync
+    Voice --> LambdaBedrock
+    LambdaBedrock --> BedrockFM
+    LambdaBedrock --> DDB
+    AppSync --> DDB
+    Chat --> AppSync
+```
+
+### Architectural Components
+1. **Amazon DynamoDB (Single-Table Design)**:
+   - Primary Key: `PK = PROPERTY#<id>`, `SK = METADATA#LATEST`.
+   - Global Secondary Indexes (GSIs) for sub-5ms filtering by city, neighborhood, rent threshold, and verified solar/meter status.
+   - Real-time utility telemetry (IBEDC feeder logs, solar inverter capacity, borehole maintenance schedules).
+2. **AWS AppSync (GraphQL)**:
+   - Real-time bidirectional messaging between verified landlords and prospective tenants without third-party websocket servers.
+   - Built-in conflict resolution and offline-first mobile sync for low-bandwidth environments.
+3. **Amazon Cognito User Pools**:
+   - Granular role-based access control (`Landlord`, `Tenant`, `Accredited Solicitor`).
+   - Integrated identity verification (NIN / BVN validation) to guarantee 100% direct property ownership and eliminate impersonation.
+4. **AWS Bedrock Runtime Agent (Serverless Microservice)**:
+   - Dedicated AWS Lambda microservice invoking Bedrock via streaming API for server-side audio transcription, Pidgin translation, and computer vision hardware audits.
+

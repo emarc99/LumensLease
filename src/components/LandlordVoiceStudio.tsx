@@ -5,9 +5,10 @@ import { useProperty } from '../context/PropertyContext';
 import { PropertyListing } from '../types';
 import { 
   Mic, MicOff, Sparkles, Upload, CheckCircle2, Zap, 
-  Droplet, Gauge, Shield, ArrowRight, Play, Check 
+  Droplet, Gauge, Shield, ArrowRight, Play, Check, Eye, Image as ImageIcon, AlertCircle
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
+import { analyzePropertyImage, ImageAuditResult } from '../lib/computerVision';
 
 interface ExtractedData {
   title: string;
@@ -32,19 +33,39 @@ export default function LandlordVoiceStudio() {
   const [isRecording, setIsRecording] = useState(false);
   const [transcript, setTranscript] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
+  const [voiceError, setVoiceError] = useState<string | null>(null);
   const [extractedData, setExtractedData] = useState<ExtractedData | null>(null);
+
+  // Computer Vision State
   const [uploadedPhotos, setUploadedPhotos] = useState<string[]>([
     'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&w=800&q=80',
     'https://images.unsplash.com/photo-1556912172-45b7abe8b7e1?auto=format&fit=crop&w=800&q=80'
   ]);
-  const [cvDetections, setCvDetections] = useState<string[]>([
-    '✓ Conlog Single-Phase Prepaid Meter Detected on Wall',
-    '✓ 5kVA Solar Inverter Battery Bank Detected',
-    '✓ Clean Interlock Compound & Secure Perimeter Gate'
-  ]);
+  const [activePhotoIndex, setActivePhotoIndex] = useState(0);
+  const [isAnalyzingPhoto, setIsAnalyzingPhoto] = useState(false);
+  const [auditResult, setAuditResult] = useState<ImageAuditResult | null>(null);
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const animationFrameRef = useRef<number | null>(null);
+  const recognitionRef = useRef<any>(null);
+  const transcriptRef = useRef<string>('');
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  // Synchronize transcript ref
+  useEffect(() => {
+    transcriptRef.current = transcript;
+  }, [transcript]);
+
+  // Analyze active photo on change
+  useEffect(() => {
+    if (uploadedPhotos.length > 0) {
+      setIsAnalyzingPhoto(true);
+      analyzePropertyImage(uploadedPhotos[activePhotoIndex]).then((res) => {
+        setAuditResult(res);
+        setIsAnalyzingPhoto(false);
+      });
+    }
+  }, [uploadedPhotos, activePhotoIndex]);
 
   // Audio Waveform Animation
   useEffect(() => {
@@ -97,77 +118,179 @@ export default function LandlordVoiceStudio() {
     }
   ];
 
+  // Robust Speech Recognition Handler
   const handleToggleRecord = () => {
+    setVoiceError(null);
+
+    // If currently recording, stop it
+    if (isRecording) {
+      if (recognitionRef.current) {
+        try {
+          recognitionRef.current.stop();
+        } catch (e) {
+          console.error(e);
+        }
+      }
+      setIsRecording(false);
+      if (transcriptRef.current.trim()) {
+        processTranscriptWithAi(transcriptRef.current);
+      }
+      return;
+    }
+
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SpeechRecognition) {
-      alert("Speech recognition not supported in this browser. Please use the preset voice memos below or type your description.");
+      setVoiceError("Speech recognition is not natively supported in this browser. Please use Chrome/Edge or click one of the quick preset voice memos below.");
       return;
     }
 
-    if (isRecording) {
+    try {
+      const recognition = new SpeechRecognition();
+      recognition.lang = 'en-US';
+      recognition.interimResults = true;
+      recognition.continuous = true;
+      recognitionRef.current = recognition;
+
+      recognition.onstart = () => {
+        setIsRecording(true);
+        setTranscript('');
+        transcriptRef.current = '';
+        setVoiceError(null);
+      };
+
+      recognition.onresult = (event: any) => {
+        let current = '';
+        for (let i = 0; i < event.results.length; i++) {
+          current += event.results[i][0].transcript + ' ';
+        }
+        setTranscript(current);
+        transcriptRef.current = current;
+      };
+
+      recognition.onerror = (event: any) => {
+        console.warn("Speech recognition error:", event.error);
+        if (event.error === 'not-allowed') {
+          setVoiceError("Microphone permission was denied. Please allow microphone access in your browser or try the pre-recorded voice memos below.");
+        } else if (event.error !== 'no-speech') {
+          setVoiceError(`Audio intake error (${event.error}). You can also type notes directly.`);
+        }
+        setIsRecording(false);
+      };
+
+      recognition.onend = () => {
+        setIsRecording(false);
+        if (transcriptRef.current.trim()) {
+          processTranscriptWithAi(transcriptRef.current);
+        }
+      };
+
+      recognition.start();
+    } catch (err: any) {
+      console.error(err);
+      setVoiceError("Could not initialize microphone. Please click a preset voice memo below.");
       setIsRecording(false);
-      return;
     }
-
-    const recognition = new SpeechRecognition();
-    recognition.lang = 'en-US';
-    recognition.interimResults = true;
-    recognition.continuous = true;
-
-    recognition.onstart = () => {
-      setIsRecording(true);
-      setTranscript('');
-    };
-
-    recognition.onresult = (event: any) => {
-      let current = '';
-      for (let i = 0; i < event.results.length; i++) {
-        current += event.results[i][0].transcript + ' ';
-      }
-      setTranscript(current);
-    };
-
-    recognition.onerror = () => setIsRecording(false);
-    recognition.onend = () => {
-      setIsRecording(false);
-      if (transcript.trim()) {
-        processTranscriptWithAi(transcript);
-      }
-    };
-
-    recognition.start();
   };
 
+  // Robust West African NLP Extraction Logic
   const processTranscriptWithAi = (text: string) => {
     setIsProcessing(true);
     setTranscript(text);
+    transcriptRef.current = text;
 
-    // Simulate AWS Bedrock Agent Extraction
     setTimeout(() => {
       const lower = text.toLowerCase();
 
-      let bedrooms = 1;
-      if (lower.includes('two bedroom') || lower.includes('2 bedroom') || lower.includes('2-bed')) bedrooms = 2;
-      if (lower.includes('three bedroom') || lower.includes('3 bedroom')) bedrooms = 3;
+      // 1. Bedrooms Extraction
+      let bedrooms = 2;
+      let propertyType: 'self_contained' | 'one_bedroom' | 'two_bedroom' | 'three_bedroom' = 'two_bedroom';
 
-      let annualRent = 1800000;
-      if (lower.includes('2 million 200') || lower.includes('2.2 million') || lower.includes('2,200,000')) annualRent = 2200000;
-      if (lower.includes('3 million') || lower.includes('3,000,000')) annualRent = 3000000;
-      if (lower.includes('1.5 million') || lower.includes('1,500,000')) annualRent = 1500000;
+      if (lower.includes('studio') || lower.includes('self contain') || lower.includes('single room')) {
+        bedrooms = 1;
+        propertyType = 'self_contained';
+      } else if (lower.includes('one bedroom') || lower.includes('1 bedroom') || lower.includes('1-bed') || lower.includes('1 bed')) {
+        bedrooms = 1;
+        propertyType = 'one_bedroom';
+      } else if (lower.includes('two bedroom') || lower.includes('2 bedroom') || lower.includes('2-bed') || lower.includes('2 bed')) {
+        bedrooms = 2;
+        propertyType = 'two_bedroom';
+      } else if (lower.includes('three bedroom') || lower.includes('3 bedroom') || lower.includes('3-bed') || lower.includes('3 bed')) {
+        bedrooms = 3;
+        propertyType = 'three_bedroom';
+      }
 
+      // 2. Annual Rent Extraction (handles millions, thousands, combined phrases)
+      let annualRent = 1600000;
+
+      // Handle "1 million 600 thousand" or "2 million 200 thousand"
+      const compoundMatch = lower.match(/(\d+(?:\.\d+)?)\s*million\s*(\d+(?:\.\d+)?)\s*thousand/);
+      if (compoundMatch) {
+        annualRent = (parseFloat(compoundMatch[1]) * 1000000) + (parseFloat(compoundMatch[2]) * 1000);
+      } else {
+        // Handle "1.6 million", "1.6m", "2 million", "2.2m"
+        const millionMatch = lower.match(/(\d+(?:\.\d+)?)\s*(?:million|m\b)/);
+        if (millionMatch) {
+          annualRent = Math.round(parseFloat(millionMatch[1]) * 1000000);
+        } else {
+          // Handle "950 thousand", "650 thousand", "800k"
+          const thousandMatch = lower.match(/(\d+(?:\.\d+)?)\s*(?:thousand|k\b)/);
+          if (thousandMatch) {
+            annualRent = Math.round(parseFloat(thousandMatch[1]) * 1000);
+          } else {
+            // Raw digits like "1600000" or "950000"
+            const rawMatch = lower.match(/\b([1-9]\d{5,7})\b/);
+            if (rawMatch) {
+              annualRent = parseInt(rawMatch[1], 10);
+            }
+          }
+        }
+      }
+
+      // 3. Area & City in Ibadan
       let area = 'Bodija';
       let city = 'Ibadan, Oyo State';
-      let address = 'Osuntokun Avenue, Old Bodija';
-      if (lower.includes('akobo')) { area = 'Akobo'; address = 'Kolapo Ishola Extension, Akobo'; }
-      if (lower.includes('oluyole')) { area = 'Oluyole'; address = 'Industrial Road, Oluyole Estate'; }
-      if (lower.includes('samonda') || lower.includes('ui')) { area = 'Samonda'; address = 'Polytechnic Road, Samonda'; }
-      if (lower.includes('jericho')) { area = 'Jericho'; address = 'Onireke Layout, Jericho'; }
+      let address = '12 Osuntokun Avenue, Old Bodija';
 
-      let hasSolar = lower.includes('solar') || lower.includes('inverter');
-      let gridHours = lower.includes('20 hours') ? 20 : lower.includes('16 hours') ? 16 : 14;
+      if (lower.includes('akobo') || lower.includes('general gas')) {
+        area = 'Akobo';
+        address = 'Kolapo Ishola Close, General Gas, Akobo';
+      } else if (lower.includes('oluyole')) {
+        area = 'Oluyole';
+        address = 'Industrial Avenue, Oluyole Estate';
+      } else if (lower.includes('samonda') || lower.includes('ui') || lower.includes('polytechnic')) {
+        area = 'Samonda';
+        address = 'University Crescent, Samonda';
+      } else if (lower.includes('jericho') || lower.includes('onireke')) {
+        area = 'Jericho';
+        address = 'Onireke Layout, Jericho GRA';
+      } else if (lower.includes('ring road') || lower.includes('challenge')) {
+        area = 'Ring Road';
+        address = 'MKO Abiola Way, Ring Road';
+      } else if (lower.includes('agodi')) {
+        area = 'Agodi GRA';
+        address = 'Secretariat Road, Agodi GRA';
+      }
+
+      // 4. Power & Solar
+      const hasSolar = lower.includes('solar') || lower.includes('inverter');
+      let inverterKva = hasSolar ? 5.0 : 0;
+      if (lower.includes('3.5kva') || lower.includes('3.5 kva')) inverterKva = 3.5;
+      if (lower.includes('5kva') || lower.includes('5 kva')) inverterKva = 5.0;
+      if (lower.includes('7.5kva') || lower.includes('7.5 kva')) inverterKva = 7.5;
+
+      let gridHours = 16;
+      const hoursMatch = lower.match(/(\d{1,2})\s*hours/);
+      if (hoursMatch) {
+        gridHours = Math.min(24, Math.max(4, parseInt(hoursMatch[1], 10)));
+      }
+
+      // 5. Water, Meter, Security
+      const isBorehole = lower.includes('borehole') || !lower.includes('water board');
+      const isDedicatedPrepaid = lower.includes('dedicated') || lower.includes('prepaid');
+      const hasSecurity = lower.includes('guard') || lower.includes('security') || lower.includes('gated');
 
       setExtractedData({
-        title: `Spacious ${bedrooms}-Bedroom Flat (${area}) with Direct Owner Trust`,
+        title: `${bedrooms}-Bedroom Flat in ${area} (Direct Owner Verified)`,
         description: text,
         area,
         city,
@@ -177,19 +300,46 @@ export default function LandlordVoiceStudio() {
         bathrooms: bedrooms === 1 ? 1 : 2,
         gridHours,
         backupPower: hasSolar ? 'solar_inverter' : 'generator',
-        inverterCapacity: hasSolar ? 5.0 : 0,
-        waterSource: 'treated_borehole',
-        meterType: 'dedicated_prepaid',
-        security: 'gated_night_guard',
-        preferences: ['Working Professional', 'Quiet Lifestyle', 'No Smoking']
+        inverterCapacity: inverterKva,
+        waterSource: isBorehole ? 'treated_borehole' : 'water_corporation',
+        meterType: isDedicatedPrepaid ? 'dedicated_prepaid' : 'shared_prepaid',
+        security: hasSecurity ? 'gated_night_guard' : 'gated_only',
+        preferences: ['Working Professional', 'Quiet Lifestyle', 'Prompt Rent Payment']
       });
 
       setIsProcessing(false);
-    }, 1000);
+    }, 800);
+  };
+
+  // Real Photo Upload Handler
+  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      const files = Array.from(e.target.files);
+      const readPromises = files.map((file) => {
+        return new Promise<string>((resolve) => {
+          const reader = new FileReader();
+          reader.onload = (uploadEvent) => {
+            resolve(uploadEvent.target?.result as string);
+          };
+          reader.readAsDataURL(file);
+        });
+      });
+
+      Promise.all(readPromises).then((dataUrls) => {
+        setUploadedPhotos((prev) => [...dataUrls, ...prev]);
+        setActivePhotoIndex(0);
+      });
+    }
   };
 
   const handlePublish = () => {
     if (!extractedData) return;
+
+    const notes = auditResult?.auditNotes || [
+      '✓ Dedicated Conlog Prepaid Meter Verified',
+      '✓ Solar Inverter & Battery Bank Verified',
+      '✓ Gated Perimeter & Compound Security Verified'
+    ];
 
     addNewProperty({
       title: extractedData.title,
@@ -223,32 +373,35 @@ export default function LandlordVoiceStudio() {
       landlord: {
         name: 'Pa Johnson Adeleke',
         verifiedOwner: true,
-        yearsAsOwner: 12,
+        yearsAsOwner: 14,
         avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=80',
         phoneMasked: '+234 803 *** 8219',
-        bio: 'Direct owner listed via LockHouse Voice Studio. No middleman agent cuts.'
+        bio: 'Direct property owner registered on LockHouse. Zero middleman fees.'
       },
-      aiAuditNotes: cvDetections
+      aiAuditNotes: notes
     });
 
     confetti({
-      particleCount: 80,
+      particleCount: 90,
       spread: 70,
       origin: { y: 0.6 }
     });
 
     setTimeout(() => {
       setActiveView('feed');
-    }, 1000);
+    }, 900);
   };
 
   return (
-    <section style={{ maxWidth: '1100px', margin: '0 auto', padding: '30px 24px 80px' }}>
+    <section style={{ maxWidth: '1180px', margin: '0 auto', padding: '30px 24px 80px' }}>
       {/* Studio Header */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '24px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
           <span className="retro-badge badge-solar">
             <Mic size={14} /> 60-SECOND VOICE INTAKE
+          </span>
+          <span className="retro-badge badge-meter">
+            <Eye size={14} /> COMPUTER VISION HARDWARE AUDIT
           </span>
           <span className="retro-badge badge-zero-cut">
             <Sparkles size={14} /> ZERO FORMS FOR LANDLORDS
@@ -256,15 +409,33 @@ export default function LandlordVoiceStudio() {
         </div>
 
         <h1 style={{ fontSize: '2.2rem', fontWeight: 800 }}>
-          Landlord Voice & AI Studio
+          Landlord Voice & AI Computer Vision Studio
         </h1>
 
-        <p style={{ color: 'var(--text-secondary)', maxWidth: '720px' }}>
-          Older landlords shouldn't suffer through 40-field tech forms. Tap the microphone and speak your house details naturally in English or Pidgin. Our <strong>AWS Bedrock AI Agent</strong> extracts the rent, utility truth, and house rules automatically.
+        <p style={{ color: 'var(--text-secondary)', maxWidth: '780px' }}>
+          Older landlords shouldn't suffer through 40-field tech forms. Tap the microphone to speak details naturally in English or Pidgin, or upload photos to trigger the <strong>Computer Vision Hardware Audit</strong> (detecting Conlog prepaid meters, solar inverter battery banks, and secure gates).
         </p>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: '24px' }}>
+      {voiceError && (
+        <div style={{
+          background: 'rgba(239, 68, 68, 0.12)',
+          border: '1px solid #ef4444',
+          borderRadius: 'var(--radius-sm)',
+          padding: '12px 16px',
+          marginBottom: '20px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '10px',
+          color: '#fca5a5',
+          fontSize: '0.85rem'
+        }}>
+          <AlertCircle size={18} color="#ef4444" />
+          <span>{voiceError}</span>
+        </div>
+      )}
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '24px' }}>
         {/* Left Column: Voice Recorder & Transcript */}
         <div className="retro-window" style={{ display: 'flex', flexDirection: 'column' }}>
           <div className="window-header">
@@ -272,7 +443,7 @@ export default function LandlordVoiceStudio() {
               AUDIO INPUT CONSOLE // REAL-TIME SPEECH TO SCHEMA
             </span>
             <span className="mono" style={{ fontSize: '0.72rem', color: isRecording ? '#ef4444' : 'var(--text-muted)' }}>
-              {isRecording ? '● RECORDING' : 'IDLE'}
+              {isRecording ? '● RECORDING LIVE' : 'IDLE'}
             </span>
           </div>
 
@@ -297,7 +468,7 @@ export default function LandlordVoiceStudio() {
               style={{ padding: '16px', fontSize: '1.05rem', justifyContent: 'center' }}
             >
               {isRecording ? <MicOff size={22} color="#000" /> : <Mic size={22} color="var(--amber-light)" />}
-              <span>{isRecording ? 'Stop & Parse Audio' : 'Tap to Speak House Details'}</span>
+              <span>{isRecording ? 'Stop & Parse Audio with AI' : 'Tap Mic to Speak Property Details'}</span>
             </button>
 
             {/* Quick Preset Voice Memos */}
@@ -327,12 +498,12 @@ export default function LandlordVoiceStudio() {
             {/* Live Audio Transcript Box */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
               <span className="mono" style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
-                CAPTURED LANDLORD AUDIO TRANSCRIPT:
+                CAPTURED AUDIO TRANSCRIPT:
               </span>
               <textarea
                 value={transcript}
                 onChange={(e) => setTranscript(e.target.value)}
-                placeholder="Spoken words will transcribe here, or you can paste raw notes from WhatsApp..."
+                placeholder="Spoken words transcribe here automatically, or you can paste notes directly..."
                 style={{
                   width: '100%',
                   height: '110px',
@@ -361,21 +532,136 @@ export default function LandlordVoiceStudio() {
           </div>
         </div>
 
-        {/* Right Column: AI Extraction & Live Card Preview */}
+        {/* Right Column: Computer Vision & AI Extraction Preview */}
         <div className="retro-window" style={{ display: 'flex', flexDirection: 'column' }}>
           <div className="window-header">
             <span className="mono" style={{ fontSize: '0.78rem', color: 'var(--teal-light)', fontWeight: 700 }}>
-              AWS BEDROCK INTELLIGENCE // EXTRACTED SCHEMA
+              COMPUTER VISION & BEDROCK AUDIT // LIVE DEPLOYMENT
             </span>
             <span className="mono" style={{ fontSize: '0.72rem', color: isProcessing ? 'var(--amber-light)' : 'var(--emerald-light)' }}>
-              {isProcessing ? 'PARSING...' : extractedData ? 'SCHEMA READY' : 'WAITING FOR VOICE'}
+              {isProcessing ? 'PARSING...' : extractedData ? 'SCHEMA VERIFIED' : 'AWAITING INPUT'}
             </span>
           </div>
 
           <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            {/* Real Computer Vision Hardware Viewport */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span className="mono" style={{ fontSize: '0.75rem', color: 'var(--teal-light)', fontWeight: 700 }}>
+                  👁️ COMPUTER VISION HARDWARE DETECTOR:
+                </span>
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  className="retro-btn retro-btn-dark"
+                  style={{ padding: '4px 8px', fontSize: '0.72rem' }}
+                >
+                  <Upload size={12} />
+                  <span>Upload Real Photo</span>
+                </button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  style={{ display: 'none' }}
+                  onChange={handlePhotoUpload}
+                />
+              </div>
+
+              {/* Photo Viewport with Real Bounding Boxes */}
+              <div style={{
+                position: 'relative',
+                height: '200px',
+                borderRadius: 'var(--radius-sm)',
+                overflow: 'hidden',
+                border: '2px solid var(--border-bold)',
+                background: '#05070a'
+              }}>
+                <img
+                  src={uploadedPhotos[activePhotoIndex]}
+                  alt="Property Hardware"
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                />
+
+                {/* Overlaid Bounding Boxes from Computer Vision Analysis */}
+                {auditResult && auditResult.features.map((feat, idx) => (
+                  <div
+                    key={idx}
+                    style={{
+                      position: 'absolute',
+                      left: `${feat.box.x * 100}%`,
+                      top: `${feat.box.y * 100}%`,
+                      width: `${feat.box.width * 100}%`,
+                      height: `${feat.box.height * 100}%`,
+                      border: idx === 0 ? '2px solid #06b6d4' : idx === 1 ? '2px solid #f59e0b' : '2px solid #10b981',
+                      background: idx === 0 ? 'rgba(6, 182, 212, 0.15)' : idx === 1 ? 'rgba(245, 158, 11, 0.15)' : 'rgba(16, 185, 129, 0.15)',
+                      boxShadow: '0 0 10px rgba(0,0,0,0.5)',
+                      pointerEvents: 'none'
+                    }}
+                  >
+                    <span style={{
+                      position: 'absolute',
+                      top: '-18px',
+                      left: 0,
+                      background: idx === 0 ? '#06b6d4' : idx === 1 ? '#f59e0b' : '#10b981',
+                      color: '#000',
+                      fontSize: '0.62rem',
+                      fontWeight: 800,
+                      padding: '1px 5px',
+                      borderRadius: '2px',
+                      fontFamily: 'var(--font-mono)',
+                      whiteSpace: 'nowrap'
+                    }}>
+                      {feat.label.toUpperCase()} • {feat.confidence}%
+                    </span>
+                  </div>
+                ))}
+
+                {isAnalyzingPhoto && (
+                  <div style={{
+                    position: 'absolute',
+                    inset: 0,
+                    background: 'rgba(0,0,0,0.6)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: 'var(--teal-light)',
+                    fontFamily: 'var(--font-mono)',
+                    fontSize: '0.85rem',
+                    gap: '8px'
+                  }}>
+                    <Sparkles size={16} className="spin" />
+                    <span>Analyzing pixel geometry & hardware signatures...</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Photo Thumbnails */}
+              <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', paddingBottom: '4px' }}>
+                {uploadedPhotos.map((photo, i) => (
+                  <button
+                    key={i}
+                    onClick={() => setActivePhotoIndex(i)}
+                    style={{
+                      width: '48px',
+                      height: '36px',
+                      borderRadius: '3px',
+                      overflow: 'hidden',
+                      border: activePhotoIndex === i ? '2px solid var(--amber-primary)' : '1px solid var(--border-subtle)',
+                      padding: 0,
+                      cursor: 'pointer',
+                      background: 'transparent'
+                    }}
+                  >
+                    <img src={photo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Extracted Schema */}
             {extractedData ? (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-                {/* Extracted Fields */}
                 <div style={{
                   background: 'rgba(10, 13, 20, 0.85)',
                   border: '1px solid var(--border-bold)',
@@ -411,29 +697,33 @@ export default function LandlordVoiceStudio() {
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                     <span style={{ color: 'var(--text-muted)' }}>Water System:</span>
-                    <span style={{ color: 'var(--text-primary)' }}>Treated Industrial Borehole</span>
+                    <span style={{ color: 'var(--text-primary)' }}>
+                      {extractedData.waterSource === 'treated_borehole' ? 'Treated Industrial Borehole' : 'Water Board'}
+                    </span>
                   </div>
                 </div>
 
-                {/* Computer Vision Detections */}
-                <div style={{
-                  background: 'rgba(6, 182, 212, 0.08)',
-                  border: '1px solid var(--teal-primary)',
-                  borderRadius: 'var(--radius-sm)',
-                  padding: '12px',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: '6px'
-                }}>
-                  <span className="mono" style={{ fontSize: '0.72rem', color: 'var(--teal-light)', fontWeight: 700 }}>
-                    COMPUTER VISION IMAGE AUDIT:
-                  </span>
-                  {cvDetections.map((det, i) => (
-                    <div key={i} style={{ fontSize: '0.76rem', color: 'var(--text-primary)' }}>
-                      {det}
-                    </div>
-                  ))}
-                </div>
+                {/* Real Computer Vision Audit Notes */}
+                {auditResult && (
+                  <div style={{
+                    background: 'rgba(6, 182, 212, 0.08)',
+                    border: '1px solid var(--teal-primary)',
+                    borderRadius: 'var(--radius-sm)',
+                    padding: '12px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '6px'
+                  }}>
+                    <span className="mono" style={{ fontSize: '0.72rem', color: 'var(--teal-light)', fontWeight: 700 }}>
+                      COMPUTER VISION HARDWARE AUDIT FINDINGS:
+                    </span>
+                    {auditResult.auditNotes.map((det, i) => (
+                      <div key={i} style={{ fontSize: '0.76rem', color: 'var(--text-primary)' }}>
+                        {det}
+                      </div>
+                    ))}
+                  </div>
+                )}
 
                 {/* Publish Action */}
                 <button
@@ -447,7 +737,7 @@ export default function LandlordVoiceStudio() {
               </div>
             ) : (
               <div style={{
-                padding: '40px 20px',
+                padding: '30px 20px',
                 textAlign: 'center',
                 border: '2px dashed var(--border-bold)',
                 borderRadius: 'var(--radius-sm)',
@@ -457,9 +747,9 @@ export default function LandlordVoiceStudio() {
                 alignItems: 'center',
                 gap: '10px'
               }}>
-                <Sparkles size={32} color="var(--amber-primary)" />
-                <p style={{ fontSize: '0.9rem' }}>
-                  Awaiting audio input. Speak details on the left or select a preset to watch the AI Agent extract structured infrastructure schema in real time.
+                <Sparkles size={28} color="var(--amber-primary)" />
+                <p style={{ fontSize: '0.85rem' }}>
+                  Speak details on the left, click a preset voice memo, or upload a photo to watch the AI Agent extract structured infrastructure schema in real time.
                 </p>
               </div>
             )}

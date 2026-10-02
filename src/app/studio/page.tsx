@@ -71,7 +71,13 @@ export default function StudioPage() {
     }
   ];
 
-  const isParsingRef = useRef(false);
+  const [structuredSpecs, setStructuredSpecs] = useState<{
+    rent: number;
+    beds: number;
+    solar: boolean;
+    hours: number;
+    loc: string;
+  } | null>(null);
 
   // Speech Recognition
   const handleToggleRecord = () => {
@@ -82,10 +88,11 @@ export default function StudioPage() {
         try { recognitionRef.current.stop(); } catch (e) { console.error(e); }
       }
       setIsRecording(false);
-      if (transcriptRef.current.trim() && !isParsingRef.current) {
-        isParsingRef.current = true;
-        parseAudioText(transcriptRef.current);
-      }
+      setTimeout(() => {
+        if (transcriptRef.current.trim()) {
+          parseAudioText(transcriptRef.current);
+        }
+      }, 150);
       return;
     }
 
@@ -101,7 +108,6 @@ export default function StudioPage() {
       recognition.interimResults = true;
       recognition.continuous = true;
       recognitionRef.current = recognition;
-      isParsingRef.current = false;
 
       recognition.onstart = () => {
         setIsRecording(true);
@@ -130,8 +136,7 @@ export default function StudioPage() {
 
       recognition.onend = () => {
         setIsRecording(false);
-        if (transcriptRef.current.trim() && !isParsingRef.current) {
-          isParsingRef.current = true;
+        if (transcriptRef.current.trim()) {
           parseAudioText(transcriptRef.current);
         }
       };
@@ -146,100 +151,143 @@ export default function StudioPage() {
 
   // Robust NLP Parser for Nigerian Landlord Voice Intake
   const parseAudioText = (text: string) => {
+    if (!text || !text.trim()) return;
     setIsProcessing(true);
     setTranscript(text);
     transcriptRef.current = text;
 
-    setTimeout(() => {
-      // 1. Clean and normalize text: strip commas from numbers (e.g. 700,000 -> 700000)
-      let normalized = text.replace(/,/g, '').toLowerCase().trim();
+    let normalized = text.replace(/,/g, '').toLowerCase().trim();
 
-      // Convert common number words to digits
-      normalized = normalized
-        .replace(/\bone\b/g, '1')
-        .replace(/\btwo\b/g, '2')
-        .replace(/\bthree\b/g, '3')
-        .replace(/\bfour\b/g, '4')
-        .replace(/\bfive\b/g, '5')
-        .replace(/\bsix\b/g, '6')
-        .replace(/\bseven\b/g, '7')
-        .replace(/\beight\b/g, '8')
-        .replace(/\bnine\b/g, '9')
-        .replace(/\bten\b/g, '10');
+    // 1. Phonetic speech recognition corrections (Nigerian accents / mishearings)
+    const phoneticReplacements: [RegExp, string][] = [
+      [/\bso\s*lah\b/g, 'solar'],
+      [/\btwo\s*virus\b/g, 'inverter'],
+      [/\bwhat\s*are\s*running\b/g, 'water running'],
+      [/\bwhat\s*are\s*you\s*running\b/g, 'water running'],
+      [/\bwater\s*running\b/g, 'running water'],
+      [/\bno\s*one\s*power\s*land\b/g, 'nepa light'],
+      [/\bpower\s*land\b/g, 'power line']
+    ];
+    for (const [re, rep] of phoneticReplacements) {
+      normalized = normalized.replace(re, rep);
+    }
 
-      // Convert 'X hundred thousand' -> X * 100 thousand
-      normalized = normalized.replace(/(\d+)\s*hundred\s*thousand/gi, (_, d) => (parseInt(d, 10) * 100) + ' thousand');
-      normalized = normalized.replace(/(\d+)\s*hundred\b/gi, (_, d) => String(parseInt(d, 10) * 100));
+    // 2. Number words to digits
+    const numberWords: [RegExp, string][] = [
+      [/\bzero\b/g, '0'],
+      [/\bone\b/g, '1'],
+      [/\btwo\b/g, '2'],
+      [/\bthree\b/g, '3'],
+      [/\bfour\b/g, '4'],
+      [/\bfive\b/g, '5'],
+      [/\bsix\b/g, '6'],
+      [/\bseven\b/g, '7'],
+      [/\beight\b/g, '8'],
+      [/\bnine\b/g, '9'],
+      [/\bten\b/g, '10']
+    ];
+    for (const [re, rep] of numberWords) {
+      normalized = normalized.replace(re, rep);
+    }
 
-      // 2. Bedrooms
-      let beds = 2;
-      if (normalized.includes('studio') || normalized.includes('self contain') || normalized.includes('single room') || normalized.match(/1\s*-?\s*bed/)) {
-        beds = 1;
-      } else if (normalized.match(/3\s*-?\s*bed/)) {
-        beds = 3;
-      } else if (normalized.match(/4\s*-?\s*bed/)) {
-        beds = 4;
-      } else if (normalized.match(/2\s*-?\s*bed/)) {
-        beds = 2;
-      }
-      setBedrooms(beds);
+    // Convert 'X hundred thousand' -> (X*100) + ' thousand'
+    normalized = normalized.replace(/(\d+)\s*hundred\s*thousand/gi, (_, d) => (parseInt(d, 10) * 100) + ' thousand');
+    normalized = normalized.replace(/(\d+)\s*hundred\b/gi, (_, d) => String(parseInt(d, 10) * 100));
 
-      // 3. Rent Parsing
-      let rent = 1600000;
-      // A. Compound match: e.g. "1 million 600 thousand" or "2 million 400k"
-      const compoundMatch = normalized.match(/(\d+(?:\.\d+)?)\s*(?:million|m)\b\s*(?:and\s*)?(\d+(?:\.\d+)?)\s*(?:thousand|k)\b/i);
-      if (compoundMatch) {
-        const m = parseFloat(compoundMatch[1]);
-        let k = parseFloat(compoundMatch[2]);
-        if (k < 1000) k = k * 1000;
-        rent = (m * 1000000) + k;
+    // 3. Rent extraction
+    let rent = annualRent;
+    const compoundMatch = normalized.match(/(\d+(?:\.\d+)?)\s*(?:million|m)\b\s*(?:and\s*)?(\d+(?:\.\d+)?)\s*(?:thousand|k)\b/i);
+    if (compoundMatch) {
+      const m = parseFloat(compoundMatch[1]);
+      let k = parseFloat(compoundMatch[2]);
+      if (k < 1000) k = k * 1000;
+      rent = (m * 1000000) + k;
+    } else {
+      const millionMatch = normalized.match(/(\d+(?:\.\d+)?)\s*(?:million|m)\b/i);
+      if (millionMatch) {
+        rent = Math.round(parseFloat(millionMatch[1]) * 1000000);
       } else {
-        // B. Single million: e.g. "1.5 million" or "2m"
-        const millionMatch = normalized.match(/(\d+(?:\.\d+)?)\s*(?:million|m)\b/i);
-        if (millionMatch) {
-          rent = Math.round(parseFloat(millionMatch[1]) * 1000000);
+        const thousandMatch = normalized.match(/(\d+(?:\.\d+)?)\s*(?:thousand|k)\b/i);
+        if (thousandMatch) {
+          let val = parseFloat(thousandMatch[1]);
+          if (val < 10000) val = val * 1000;
+          rent = Math.round(val);
         } else {
-          // C. Thousands: e.g. "950 thousand" or "650k"
-          const thousandMatch = normalized.match(/(\d+(?:\.\d+)?)\s*(?:thousand|k)\b/i);
-          if (thousandMatch) {
-            let val = parseFloat(thousandMatch[1]);
-            if (val < 10000) val = val * 1000;
-            rent = Math.round(val);
+          // Explicit "X naira" e.g. "500000 naira", "1600000 naira"
+          const nairaMatch = normalized.match(/(\d{4,8})\s*(?:naira|ngn)/i);
+          if (nairaMatch) {
+            rent = parseInt(nairaMatch[1], 10);
           } else {
-            // D. Direct numbers: e.g. "700000" or "850000"
-            const directMatch = normalized.match(/(?:rent\s*(?:is|of)?\s*)?([5-9]\d{5}|[1-9]\d{6,7})/i);
+            // Standalone 5-8 digit number
+            const directMatch = normalized.match(/\b([1-9]\d{4,7})\b/);
             if (directMatch) {
               rent = parseInt(directMatch[1], 10);
             }
           }
         }
       }
-      setAnnualRent(rent);
+    }
+    setAnnualRent(rent);
 
-      // 4. Location Parsing
-      let loc = 'Osuntokun Avenue, Old Bodija, Ibadan';
-      if (normalized.includes('akobo') || normalized.includes('general gas')) loc = 'General Gas Road, Akobo, Ibadan';
-      else if (normalized.includes('oluyole')) loc = 'Industrial Avenue, Oluyole Estate, Ibadan';
-      else if (normalized.includes('samonda') || normalized.includes('ui') || normalized.includes('polytechnic')) loc = 'Polytechnic Road, Samonda, Ibadan';
-      else if (normalized.includes('jericho') || normalized.includes('onireke')) loc = 'Onireke Layout, Jericho, Ibadan';
-      else if (normalized.includes('challenge') || normalized.includes('ring road')) loc = 'Ring Road, Challenge, Ibadan';
-      else if (normalized.includes('yaba')) loc = 'Commercial Avenue, Yaba, Lagos';
-      else if (normalized.includes('lekki')) loc = 'Admiralty Way, Lekki Phase 1, Lagos';
-      else if (normalized.includes('ikeja')) loc = 'Isaac John Street, GRA Ikeja, Lagos';
-      setLocation(loc);
+    // 4. Bedrooms extraction
+    let beds = bedrooms;
+    if (normalized.includes('studio') || normalized.includes('self contain') || normalized.includes('single room') || normalized.includes('room and parlor') || normalized.includes('room and parlour')) {
+      beds = 1;
+    } else {
+      const bedMatch = normalized.match(/(\d+)\s*(?:bedroom|bed|bed-room)s?\b/i);
+      const roomMatch = normalized.match(/(\d+)\s*rooms?\b/i);
+      if (bedMatch) {
+        beds = parseInt(bedMatch[1], 10);
+      } else if (roomMatch) {
+        beds = parseInt(roomMatch[1], 10);
+      }
+    }
+    setBedrooms(beds);
 
-      // 5. Power & Solar
-      const solar = normalized.includes('solar') || normalized.includes('inverter');
-      setHasSolar(solar);
+    // 5. Power & Solar
+    const solar = normalized.includes('solar') || 
+                  normalized.includes('inverter') || 
+                  normalized.includes('battery') || 
+                  normalized.includes('power supply') ||
+                  normalized.includes('hybrid');
+    setHasSolar(solar);
 
-      const hoursMatch = normalized.match(/(\d{1,2})\s*hours/);
-      if (hoursMatch) setGridHours(parseInt(hoursMatch[1], 10));
+    let hours = gridHours;
+    const hoursMatch = normalized.match(/(\d{1,2})\s*hours/);
+    if (hoursMatch) {
+      const h = parseInt(hoursMatch[1], 10);
+      if (h >= 1 && h <= 24) {
+        hours = h;
+        setGridHours(h);
+      }
+    }
 
-      const areaName = loc.split(',')[1]?.trim() || 'Ibadan';
-      setTitle(`Clean ${beds}-Bedroom Flat in ${areaName}`);
-      setIsProcessing(false);
-      isParsingRef.current = false;
-    }, 500);
+    // 6. Location
+    let loc = location;
+    if (normalized.includes('akobo') || normalized.includes('general gas')) loc = 'General Gas Road, Akobo, Ibadan';
+    else if (normalized.includes('oluyole')) loc = 'Industrial Avenue, Oluyole Estate, Ibadan';
+    else if (normalized.includes('samonda') || normalized.includes('ui') || normalized.includes('polytechnic')) loc = 'Polytechnic Road, Samonda, Ibadan';
+    else if (normalized.includes('jericho') || normalized.includes('onireke')) loc = 'Onireke Layout, Jericho, Ibadan';
+    else if (normalized.includes('challenge') || normalized.includes('ring road')) loc = 'Ring Road, Challenge, Ibadan';
+    else if (normalized.includes('yaba')) loc = 'Commercial Avenue, Yaba, Lagos';
+    else if (normalized.includes('lekki')) loc = 'Admiralty Way, Lekki Phase 1, Lagos';
+    else if (normalized.includes('ikeja')) loc = 'Isaac John Street, GRA Ikeja, Lagos';
+    setLocation(loc);
+
+    // 7. Title
+    const areaName = loc.split(',')[1]?.trim() || loc.split(',')[0]?.trim() || 'Ibadan';
+    const newTitle = `Clean ${beds}-Bedroom Flat ${solar ? 'with Solar ' : ''}in ${areaName}`;
+    setTitle(newTitle);
+
+    setStructuredSpecs({
+      rent,
+      beds,
+      solar,
+      hours,
+      loc
+    });
+
+    setIsProcessing(false);
   };
 
   // Real Photo Upload
@@ -400,6 +448,34 @@ export default function StudioPage() {
                 </div>
               )}
 
+              {structuredSpecs && (
+                <div style={{
+                  background: 'rgba(34, 197, 94, 0.08)',
+                  border: '1px solid rgba(34, 197, 94, 0.25)',
+                  borderRadius: '6px',
+                  padding: '10px 12px',
+                  marginTop: '10px',
+                  fontSize: '12px'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#16a34a', fontWeight: 700 }}>
+                      <CheckCircle2 size={15} /> Structured via AWS Bedrock NLP:
+                    </span>
+                    <span style={{ color: 'var(--muted)', fontSize: '11px' }}>Auto-filled below</span>
+                  </div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                    <span className="pill pill-orange">₦{annualRent.toLocaleString('en-NG')} / yr</span>
+                    <span className="pill">{bedrooms} Bedrooms</span>
+                    {hasSolar ? (
+                      <span className="pill" style={{ color: '#16a34a' }}>⚡ Solar Inverter</span>
+                    ) : (
+                      <span className="pill">Grid Power</span>
+                    )}
+                    <span className="pill">{gridHours}h IBEDC Light</span>
+                  </div>
+                </div>
+              )}
+
               {/* Sample Voice Memos */}
               <div style={{ marginTop: '14px', marginBottom: '14px' }}>
                 <span className="panel-label" style={{ display: 'block', marginBottom: '6px' }}>
@@ -430,13 +506,68 @@ export default function StudioPage() {
                 <input value={location} onChange={(e) => setLocation(e.target.value)} />
               </div>
 
-              <div className="form-field">
-                <label>Annual rent (₦)</label>
-                <input
-                  type="number"
-                  value={annualRent}
-                  onChange={(e) => setAnnualRent(parseInt(e.target.value, 10) || 0)}
-                />
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                <div className="form-field">
+                  <label>Annual rent (₦)</label>
+                  <input
+                    type="number"
+                    value={annualRent}
+                    onChange={(e) => setAnnualRent(parseInt(e.target.value, 10) || 0)}
+                  />
+                </div>
+                <div className="form-field">
+                  <label>Bedrooms</label>
+                  <select
+                    value={bedrooms}
+                    onChange={(e) => setBedrooms(parseInt(e.target.value, 10))}
+                    style={{
+                      width: '100%',
+                      padding: '8px 10px',
+                      background: 'var(--panel)',
+                      border: '1px solid var(--line)',
+                      borderRadius: '4px',
+                      color: 'var(--fg)',
+                      fontSize: '13px'
+                    }}
+                  >
+                    <option value={1}>1 Bed / Studio</option>
+                    <option value={2}>2 Bedrooms</option>
+                    <option value={3}>3 Bedrooms</option>
+                    <option value={4}>4 Bedrooms</option>
+                  </select>
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                <div className="form-field">
+                  <label>Backup Power</label>
+                  <select
+                    value={hasSolar ? 'solar' : 'generator'}
+                    onChange={(e) => setHasSolar(e.target.value === 'solar')}
+                    style={{
+                      width: '100%',
+                      padding: '8px 10px',
+                      background: 'var(--panel)',
+                      border: '1px solid var(--line)',
+                      borderRadius: '4px',
+                      color: 'var(--fg)',
+                      fontSize: '13px'
+                    }}
+                  >
+                    <option value="solar">Solar Inverter Bank</option>
+                    <option value="generator">Generator / Grid Only</option>
+                  </select>
+                </div>
+                <div className="form-field">
+                  <label>IBEDC Grid (hrs/day)</label>
+                  <input
+                    type="number"
+                    min={1}
+                    max={24}
+                    value={gridHours}
+                    onChange={(e) => setGridHours(parseInt(e.target.value, 10) || 16)}
+                  />
+                </div>
               </div>
 
               <button

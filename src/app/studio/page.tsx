@@ -71,6 +71,8 @@ export default function StudioPage() {
     }
   ];
 
+  const isParsingRef = useRef(false);
+
   // Speech Recognition
   const handleToggleRecord = () => {
     setVoiceError(null);
@@ -80,7 +82,8 @@ export default function StudioPage() {
         try { recognitionRef.current.stop(); } catch (e) { console.error(e); }
       }
       setIsRecording(false);
-      if (transcriptRef.current.trim()) {
+      if (transcriptRef.current.trim() && !isParsingRef.current) {
+        isParsingRef.current = true;
         parseAudioText(transcriptRef.current);
       }
       return;
@@ -98,6 +101,7 @@ export default function StudioPage() {
       recognition.interimResults = true;
       recognition.continuous = true;
       recognitionRef.current = recognition;
+      isParsingRef.current = false;
 
       recognition.onstart = () => {
         setIsRecording(true);
@@ -126,7 +130,8 @@ export default function StudioPage() {
 
       recognition.onend = () => {
         setIsRecording(false);
-        if (transcriptRef.current.trim()) {
+        if (transcriptRef.current.trim() && !isParsingRef.current) {
+          isParsingRef.current = true;
           parseAudioText(transcriptRef.current);
         }
       };
@@ -139,60 +144,102 @@ export default function StudioPage() {
     }
   };
 
-  // Robust NLP Parser
+  // Robust NLP Parser for Nigerian Landlord Voice Intake
   const parseAudioText = (text: string) => {
     setIsProcessing(true);
     setTranscript(text);
     transcriptRef.current = text;
 
     setTimeout(() => {
-      const lower = text.toLowerCase();
+      // 1. Clean and normalize text: strip commas from numbers (e.g. 700,000 -> 700000)
+      let normalized = text.replace(/,/g, '').toLowerCase().trim();
 
-      // 1. Bedrooms
+      // Convert common number words to digits
+      normalized = normalized
+        .replace(/\bone\b/g, '1')
+        .replace(/\btwo\b/g, '2')
+        .replace(/\bthree\b/g, '3')
+        .replace(/\bfour\b/g, '4')
+        .replace(/\bfive\b/g, '5')
+        .replace(/\bsix\b/g, '6')
+        .replace(/\bseven\b/g, '7')
+        .replace(/\beight\b/g, '8')
+        .replace(/\bnine\b/g, '9')
+        .replace(/\bten\b/g, '10');
+
+      // Convert 'X hundred thousand' -> X * 100 thousand
+      normalized = normalized.replace(/(\d+)\s*hundred\s*thousand/gi, (_, d) => (parseInt(d, 10) * 100) + ' thousand');
+      normalized = normalized.replace(/(\d+)\s*hundred\b/gi, (_, d) => String(parseInt(d, 10) * 100));
+
+      // 2. Bedrooms
       let beds = 2;
-      if (lower.includes('studio') || lower.includes('self contain') || lower.includes('single room') || lower.includes('1 bedroom') || lower.includes('one bedroom')) {
+      if (normalized.includes('studio') || normalized.includes('self contain') || normalized.includes('single room') || normalized.match(/1\s*-?\s*bed/)) {
         beds = 1;
-      } else if (lower.includes('three bedroom') || lower.includes('3 bedroom')) {
+      } else if (normalized.match(/3\s*-?\s*bed/)) {
         beds = 3;
+      } else if (normalized.match(/4\s*-?\s*bed/)) {
+        beds = 4;
+      } else if (normalized.match(/2\s*-?\s*bed/)) {
+        beds = 2;
       }
       setBedrooms(beds);
 
-      // 2. Rent
+      // 3. Rent Parsing
       let rent = 1600000;
-      const compoundMatch = lower.match(/(\d+(?:\.\d+)?)\s*million\s*(\d+(?:\.\d+)?)\s*thousand/);
+      // A. Compound match: e.g. "1 million 600 thousand" or "2 million 400k"
+      const compoundMatch = normalized.match(/(\d+(?:\.\d+)?)\s*(?:million|m)\b\s*(?:and\s*)?(\d+(?:\.\d+)?)\s*(?:thousand|k)\b/i);
       if (compoundMatch) {
-        rent = (parseFloat(compoundMatch[1]) * 1000000) + (parseFloat(compoundMatch[2]) * 1000);
+        const m = parseFloat(compoundMatch[1]);
+        let k = parseFloat(compoundMatch[2]);
+        if (k < 1000) k = k * 1000;
+        rent = (m * 1000000) + k;
       } else {
-        const millionMatch = lower.match(/(\d+(?:\.\d+)?)\s*(?:million|m\b)/);
+        // B. Single million: e.g. "1.5 million" or "2m"
+        const millionMatch = normalized.match(/(\d+(?:\.\d+)?)\s*(?:million|m)\b/i);
         if (millionMatch) {
           rent = Math.round(parseFloat(millionMatch[1]) * 1000000);
         } else {
-          const thousandMatch = lower.match(/(\d+(?:\.\d+)?)\s*(?:thousand|k\b)/);
+          // C. Thousands: e.g. "950 thousand" or "650k"
+          const thousandMatch = normalized.match(/(\d+(?:\.\d+)?)\s*(?:thousand|k)\b/i);
           if (thousandMatch) {
-            rent = Math.round(parseFloat(thousandMatch[1]) * 1000);
+            let val = parseFloat(thousandMatch[1]);
+            if (val < 10000) val = val * 1000;
+            rent = Math.round(val);
+          } else {
+            // D. Direct numbers: e.g. "700000" or "850000"
+            const directMatch = normalized.match(/(?:rent\s*(?:is|of)?\s*)?([5-9]\d{5}|[1-9]\d{6,7})/i);
+            if (directMatch) {
+              rent = parseInt(directMatch[1], 10);
+            }
           }
         }
       }
       setAnnualRent(rent);
 
-      // 3. Location
+      // 4. Location Parsing
       let loc = 'Osuntokun Avenue, Old Bodija, Ibadan';
-      if (lower.includes('akobo') || lower.includes('general gas')) loc = 'General Gas Road, Akobo, Ibadan';
-      else if (lower.includes('oluyole')) loc = 'Industrial Avenue, Oluyole Estate, Ibadan';
-      else if (lower.includes('samonda') || lower.includes('ui')) loc = 'Polytechnic Road, Samonda, Ibadan';
-      else if (lower.includes('jericho')) loc = 'Onireke Layout, Jericho, Ibadan';
+      if (normalized.includes('akobo') || normalized.includes('general gas')) loc = 'General Gas Road, Akobo, Ibadan';
+      else if (normalized.includes('oluyole')) loc = 'Industrial Avenue, Oluyole Estate, Ibadan';
+      else if (normalized.includes('samonda') || normalized.includes('ui') || normalized.includes('polytechnic')) loc = 'Polytechnic Road, Samonda, Ibadan';
+      else if (normalized.includes('jericho') || normalized.includes('onireke')) loc = 'Onireke Layout, Jericho, Ibadan';
+      else if (normalized.includes('challenge') || normalized.includes('ring road')) loc = 'Ring Road, Challenge, Ibadan';
+      else if (normalized.includes('yaba')) loc = 'Commercial Avenue, Yaba, Lagos';
+      else if (normalized.includes('lekki')) loc = 'Admiralty Way, Lekki Phase 1, Lagos';
+      else if (normalized.includes('ikeja')) loc = 'Isaac John Street, GRA Ikeja, Lagos';
       setLocation(loc);
 
-      // 4. Power & Solar
-      const solar = lower.includes('solar') || lower.includes('inverter');
+      // 5. Power & Solar
+      const solar = normalized.includes('solar') || normalized.includes('inverter');
       setHasSolar(solar);
 
-      const hoursMatch = lower.match(/(\d{1,2})\s*hours/);
+      const hoursMatch = normalized.match(/(\d{1,2})\s*hours/);
       if (hoursMatch) setGridHours(parseInt(hoursMatch[1], 10));
 
-      setTitle(`Clean ${beds}-Bedroom Flat in ${loc.split(',')[1]?.trim() || 'Ibadan'}`);
+      const areaName = loc.split(',')[1]?.trim() || 'Ibadan';
+      setTitle(`Clean ${beds}-Bedroom Flat in ${areaName}`);
       setIsProcessing(false);
-    }, 600);
+      isParsingRef.current = false;
+    }, 500);
   };
 
   // Real Photo Upload
@@ -316,17 +363,42 @@ export default function StudioPage() {
                 className={`mic ${isRecording ? 'recording' : ''}`}
                 onClick={handleToggleRecord}
                 aria-pressed={isRecording}
+                title={isRecording ? "Click to finish and structure listing" : "Click to speak voice memo"}
               >
                 {isRecording ? <MicOff size={32} /> : <Mic size={32} />}
               </button>
 
+              {/* Sound wave visualizer while recording */}
+              {isRecording && (
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', margin: '14px 0 8px', height: '24px' }}>
+                  {[14, 22, 12, 26, 18, 10, 24, 16, 8, 20].map((h, i) => (
+                    <span
+                      key={i}
+                      style={{
+                        width: '3px',
+                        height: `${h}px`,
+                        background: 'var(--orange)',
+                        borderRadius: '2px',
+                        animation: `pulse 0.5s ease-in-out infinite alternate ${i * 0.07}s`
+                      }}
+                    />
+                  ))}
+                </div>
+              )}
+
               <div className="transcript">
                 {isRecording
-                  ? 'Listening live… speak freely about the rent, location, and light hours.'
+                  ? (transcript ? `Listening live: "${transcript}"` : 'Listening live… speak freely about the rent, location, and light hours.')
                   : transcript
                   ? `AI Transcript: "${transcript}"`
                   : 'Tap the mic and speak naturally. Our AWS Bedrock AI agent will structure the details for you.'}
               </div>
+
+              {isProcessing && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--orange)', fontSize: '12px', marginTop: '8px', fontWeight: 600 }}>
+                  <Sparkles size={14} /> Structuring rent, bedrooms, and location via AWS Bedrock NLP...
+                </div>
+              )}
 
               {/* Sample Voice Memos */}
               <div style={{ marginTop: '14px', marginBottom: '14px' }}>

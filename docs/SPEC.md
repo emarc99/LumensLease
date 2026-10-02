@@ -8,19 +8,19 @@
 
 ```mermaid
 graph TD
-    subgraph Client ["Client Browser (React + Vite + TypeScript)"]
-        UI[Retro-Tech 90s Command HUD]
-        VRecorder[Web Speech / Audio Recorder]
-        PFeed[Interactive Property Feed & Utility Scorecard]
-        ChatEngine[Direct Landlord-Tenant Chat Room]
-        AgrGen[Zero-Agent Legal Agreement Generator]
+    subgraph Client ["Client Browser (Next.js 16 + TypeScript)"]
+        UI["Retro-Tech 90s Command HUD"]
+        VRecorder["Web Speech / Audio Recorder"]
+        PFeed["Interactive Property Feed & Utility Scorecard"]
+        ChatEngine["Direct Landlord-Tenant Chat Room"]
+        AgrGen["Zero-Agent Legal Agreement Generator"]
     end
 
     subgraph AWS ["AWS Cloud Infrastructure (us-east-1)"]
         Bedrock["AWS Bedrock / AI Extraction Agent (Claude 3.5 Sonnet)"]
         S3Bucket["Amazon S3 Property Assets & Transcripts"]
-        CloudFront["CloudFront CDN / Amplify Live Distribution"]
-        STS["AWS Security Token Service (Caller Identity 226579698869)"]
+        CloudFront["CloudFront CDN Live Distribution"]
+        STS["AWS Security Token Service (Caller Identity: 226579698869)"]
     end
 
     UI --> VRecorder
@@ -133,31 +133,31 @@ export interface TenancyAgreementData {
 ```mermaid
 graph TD
     subgraph Client ["Client Layer (Next.js 16 App Router)"]
-        UI[Retro-Tech Command Console]
-        Voice[Web Audio / Speech Stream]
-        Chat[Direct Landlord-Tenant Chat]
+        UI["Retro-Tech Command Console"]
+        Voice["Web Audio / Speech Stream"]
+        Chat["Direct Landlord-Tenant Chat"]
     end
 
     subgraph Edge ["AWS Edge Infrastructure"]
-        CF[Amazon CloudFront CDN (Global + Lagos POP LOS50-P5)]
-        S3[Amazon S3 Static & Media Storage]
+        CF["Amazon CloudFront CDN (Global + Lagos POP: LOS50-P5)"]
+        S3["Amazon S3 Static & Media Storage"]
     end
 
     subgraph Auth ["Security & Identity"]
-        Cognito[Amazon Cognito User Pools<br/>Role: Landlord / Tenant / Solicitor]
+        Cognito["Amazon Cognito User Pools (Role: Landlord / Tenant / Solicitor)"]
     end
 
     subgraph Compute ["Serverless Application Layer"]
-        AppSync[AWS AppSync GraphQL API<br/>Real-Time Subscriptions]
-        LambdaBedrock[AWS Lambda: Bedrock Agent Processor]
+        AppSync["AWS AppSync GraphQL API (Real-Time Subscriptions)"]
+        LambdaBedrock["AWS Lambda: Bedrock Agent Processor"]
     end
 
     subgraph AI ["Foundation Models"]
-        BedrockFM[Amazon Bedrock<br/>Claude 3.5 Sonnet / Titan Multimodal]
+        BedrockFM["Amazon Bedrock (Claude 3.5 Sonnet / Titan Multimodal)"]
     end
 
     subgraph Database ["Persistent Data Layer"]
-        DDB[(Amazon DynamoDB<br/>Single-Table Design)]
+        DDB[("Amazon DynamoDB (Single-Table Design)")]
     end
 
     UI --> CF

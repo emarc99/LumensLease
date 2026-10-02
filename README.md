@@ -57,3 +57,23 @@ npm run dev -- -p 3001
 # Production build & static export
 npm run build
 ```
+
+---
+
+## 📚 Project Documentation
+
+Deep-dive architectural, product, and hackathon documentation is available in the [`docs/`](./docs) folder:
+
+| Document | Purpose & Relevant Content |
+| :--- | :--- |
+| **[SUBMISSION.md](./docs/SUBMISSION.md)** | **Official AWS Hackathon Dossier** — Founder origin story in Ibadan, documented proof of AI agent connection (`226579698869`), and step-by-step development process. |
+| **[PRD.md](./docs/PRD.md)** | **Product Requirements Document** — Dual user journeys (Gen-Z renter vs. non-tech older landlord), screen specs, and Phase 2 serverless backend roadmap. |
+| **[SPEC.md](./docs/SPEC.md)** | **Technical Specification** — System architecture, TypeScript data schemas, Bedrock AI extraction prompts, and Phase 2 Mermaid cloud topology. |
+| **[CHECKLIST.md](./docs/CHECKLIST.md)** | **Implementation Audit** — Step-by-step development checklist tracking Phase 1 through 6 milestones and deployment verification. |
+
+---
+
+## 📄 License
+
+This project is open-source and available under the [MIT License](./LICENSE).
+

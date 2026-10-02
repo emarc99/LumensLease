@@ -14,14 +14,6 @@ export default function HomePage() {
   const [isListening, setIsListening] = useState(false);
   const [voiceNotice, setVoiceNotice] = useState<string | null>(null);
   const recognitionRef = useRef<any>(null);
-  const voicePresetIdx = useRef(0);
-
-  const sampleVoiceQueries = [
-    "quiet 2-bed in Bodija with 5kVA solar",
-    "dedicated prepaid meter in Akobo",
-    "treated borehole in Oluyole with backup light",
-    "self contained studio near UI in Samonda"
-  ];
 
   // Initialize Speech Recognition
   const handleToggleVoice = () => {
@@ -38,11 +30,7 @@ export default function HomePage() {
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
 
     if (!SpeechRecognition) {
-      // Fallback for browsers without Web Speech API: simulate cycling realistic voice queries
-      const nextQuery = sampleVoiceQueries[voicePresetIdx.current % sampleVoiceQueries.length];
-      voicePresetIdx.current += 1;
-      setQuery(nextQuery);
-      setVoiceNotice(`Speech API not supported in this browser — applied voice preset: "${nextQuery}"`);
+      setVoiceNotice("Speech recognition is not supported in this browser. Please use Chrome or Edge.");
       return;
     }
 
@@ -55,7 +43,7 @@ export default function HomePage() {
 
       recognition.onstart = () => {
         setIsListening(true);
-        setVoiceNotice('Listening to microphone... speak your requirements (e.g. "quiet flat in Bodija with solar")');
+        setVoiceNotice('Listening to microphone... speak your search requirements');
       };
 
       recognition.onresult = (event: any) => {
@@ -69,13 +57,9 @@ export default function HomePage() {
       recognition.onerror = (event: any) => {
         console.warn('Speech recognition error:', event.error);
         if (event.error === 'not-allowed') {
-          // Microphone permission denied: gracefully fall back to cycling voice query preset
-          const nextQuery = sampleVoiceQueries[voicePresetIdx.current % sampleVoiceQueries.length];
-          voicePresetIdx.current += 1;
-          setQuery(nextQuery);
-          setVoiceNotice(`Microphone access denied. Loaded spoken preset: "${nextQuery}"`);
+          setVoiceNotice("Microphone permission was denied. Please allow microphone access in your browser.");
         } else if (event.error !== 'no-speech') {
-          setVoiceNotice(`Voice intake notice (${event.error}). Try again or click a sample query below.`);
+          setVoiceNotice(`Voice search notice: ${event.error}`);
         }
         setIsListening(false);
       };
@@ -87,10 +71,7 @@ export default function HomePage() {
       recognition.start();
     } catch (err) {
       console.error('Failed to start speech recognition:', err);
-      const nextQuery = sampleVoiceQueries[voicePresetIdx.current % sampleVoiceQueries.length];
-      voicePresetIdx.current += 1;
-      setQuery(nextQuery);
-      setVoiceNotice(`Loaded spoken preset: "${nextQuery}"`);
+      setVoiceNotice('Could not start voice search.');
       setIsListening(false);
     }
   };
@@ -270,40 +251,6 @@ export default function HomePage() {
                 <span>{voiceNotice}</span>
               </div>
             )}
-
-            {/* Spoken voice suggestion chips */}
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              marginTop: '10px',
-              fontSize: '0.78rem',
-              color: '#64748b',
-              flexWrap: 'wrap'
-            }}>
-              <span>Spoken prompts:</span>
-              {sampleVoiceQueries.map((sq) => (
-                <button
-                  key={sq}
-                  type="button"
-                  onClick={() => setQuery(sq)}
-                  style={{
-                    background: '#f1f5f9',
-                    border: '1px solid #e2e8f0',
-                    borderRadius: '999px',
-                    padding: '3px 10px',
-                    fontSize: '0.75rem',
-                    color: '#334155',
-                    cursor: 'pointer',
-                    transition: 'all 0.15s ease'
-                  }}
-                  onMouseOver={(e) => { e.currentTarget.style.background = '#e2e8f0'; }}
-                  onMouseOut={(e) => { e.currentTarget.style.background = '#f1f5f9'; }}
-                >
-                  "{sq}"
-                </button>
-              ))}
-            </div>
 
             <div className="filter-row">
               {filters.map((filter) => (

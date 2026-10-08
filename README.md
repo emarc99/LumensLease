@@ -1,4 +1,4 @@
-﻿# 🏛️ LumensLease
+﻿# 🏢 LumensLease
 **Decentralized Rental Trust & Caution Deposit Escrow Protocol on Stellar & Soroban.**
 
 > **Lock in your verified home. Lock out the middleman. Secure your deposit on Soroban.**  
@@ -13,7 +13,7 @@
 
 ---
 
-## 🌐 Live Deployments & Endpoints
+## 🔗 Live Deployments & Endpoints
 
 * **Global Web Application**: [https://d1dco6ew3il05x.cloudfront.net](https://d1dco6ew3il05x.cloudfront.net)
 * **Landlord Voice Studio**: [https://d1dco6ew3il05x.cloudfront.net/studio/](https://d1dco6ew3il05x.cloudfront.net/studio/)
@@ -22,7 +22,16 @@
 
 ---
 
-## ⚡ The Problem: The Rental Crisis in Emerging Markets
+## ⚡ Quick Documentation Links
+
+* 🗺️ **[Protocol Roadmap & Milestones](./docs/ROADMAP.md)**: Real phase statuses (Phase 0 partially completed, Phase 1 ongoing) and P1/P2/P3 priorities.
+* 🔒 **[Soroban Smart Contract Architecture](./docs/SOROBAN_ARCHITECTURE.md)**: Rust contract trait, escrow state machine, and storage TTL lifecycle.
+* 🌊 **[Drips Wave 10 Contribution Backlog](./docs/DRIPS_WAVE.md)**: Open-source issues, complexity levels, and point rewards.
+* 🚀 **[Stellar Community Fund (SCF) Alignment](./docs/SCF_ALIGNMENT.md)**: Real-world utility, Soroban adoption thesis, and stablecoin velocity.
+
+---
+
+## 🛑 The Problem: The Rental Crisis in Emerging Markets
 
 In emerging urban centers across Africa (Lagos, Ibadan, Abuja, Nairobi), renting a home is an exploitative, adversarial minefield:
 
@@ -33,35 +42,33 @@ In emerging urban centers across Africa (Lagos, Ibadan, Abuja, Nairobi), renting
 
 ---
 
-## 🛰️ The Solution: The LumensLease Dual-Engine Architecture
+## 🏛️ The Solution: The LumensLease Dual-Engine Architecture
 
 **LumensLease** combines **off-chain AI & edge verification** with **on-chain Soroban smart contract escrows** to create an end-to-end, trustless real estate protocol.
 
 ```
                               LUMENSLEASE DUAL-ENGINE ARCHITECTURE
 
-      ┌─────────────────────────────────────────────────────────────────────────────┐
-      │                   LAYER 1: OFF-CHAIN AI & EDGE INTELLIGENCE                 │
-      │                                                                             │
-      │  ┌───────────────────────┐  ┌────────────────────────┐  ┌────────────────┐ │
-      │  │ Landlord Voice Studio │  │ Computer Vision Audit   │  │ Statutory Lease│ │
-      │  │ Nigerian Phonetic NLP │  │ Solar, Meter & Security │  │ Legal Generator│ │
-      │  └───────────┬───────────┘  └───────────┬────────────┘  └────────┬───────┘ │
-      └──────────────┼──────────────────────────┼────────────────────────┼──────────┘
-                     │                          │                        │
-                     ▼                          ▼                        ▼
-      ┌─────────────────────────────────────────────────────────────────────────────┐
-      │              LAYER 2: ON-CHAIN FINANCIAL TRUST (STELLAR & SOROBAN)          │
-      │                                                                             │
-      │   ┌────────────────────────┐             ┌──────────────────────────────┐   │
-      │   │ Soroban Rental Escrow  │             │ Stellar Payment Rails        │   │
-      │   │ • Caution Deposit Lock │             │ • Stellar USDC & cNGN        │   │
-      │   │ • Milestone Rent Flow  │             │ • Sub-Cent Fast Micropayments│   │
-      │   │ • 2-of-3 Arbitration   │             │ • Anchor On-Ramps (SEP-24/6) │   │
-      │   └───────────┬────────────┘             └──────────────┬───────────────┘   │
-      └───────────────┼─────────────────────────────────────────┼───────────────────┘
-                      │                                         │
-                      ▼                                         ▼
+      +-----------------------------------------------------------------------------+
+      |                   LAYER 1: OFF-CHAIN AI & EDGE INTELLIGENCE                 |
+      |                                                                             |
+      |  +-----------------------+  +-----------------------+  +-----------------+  |
+      |  | Landlord Voice Studio |  | Computer Vision Audit |  | Statutory Lease |  |
+      |  | Nigerian Phonetic NLP |  | Solar, Meter & Security| | Legal Generator |  |
+      |  +-----------------------+  +-----------------------+  +-----------------+  |
+      +-----------------------------------------------------------------------------+
+                     |                          |                        |
+      +-----------------------------------------------------------------------------+
+      |              LAYER 2: ON-CHAIN FINANCIAL TRUST (STELLAR & SOROBAN)          |
+      |                                                                             |
+      |   +------------------------+             +---------------------------+      |
+      |   | Soroban Rental Escrow  |             | Stellar Payment Rails     |      |
+      |   |   Caution Deposit Lock |             |   Stellar USDC & cNGN     |      |
+      |   |   Milestone Rent Flow  |             |   Sub-Cent Micropayments  |      |
+      |   |   2-of-3 Arbitration   |             |   Anchor On-Ramps (SEP-24)|      |
+      |   +------------------------+             +---------------------------+      |
+      +-----------------------------------------------------------------------------+
+                      |                                         |
                                    [ STELLAR LEDGER ]
                              Cryptographic Tenancy Deeds
                              Verifiable Tenant Credit History
@@ -69,59 +76,14 @@ In emerging urban centers across Africa (Lagos, Ibadan, Abuja, Nairobi), renting
 
 ### 1. Off-Chain AI & Edge Verification Layer
 * **Landlord Voice Studio (`/studio`)**: Older property owners tap a microphone and speak naturally in English, Nigerian Pidgin, or regional accents. Our custom phonetic normalizer maps local speech (*"so lah"* $\rightarrow$ solar inverter, *"two virus"* $\rightarrow$ inverter batteries, *"what are running"* $\rightarrow$ treated borehole water) into structured listings.
-* **Computer Vision Property Audit**: Client-side object detection automatically inspects property photos to verify **Conlog Prepaid Meters (96%)**, **Solar Battery Banks (94%)**, and **Gated Perimeter Security (92%)**.
+* **Computer Vision Property Audit (`src/lib/computerVision.ts`)**: Client-side canvas inspection and feature detection automatically verify **Prepaid Meters**, **Solar Battery Banks**, and **Gated Compound Security** directly from uploaded images.
 * **Utility Truth Scorecard**: Guaranteed transparency on daily grid power hours, backup solar capacity, and treated water before inspection.
 
 ### 2. On-Chain Financial Trust Layer (Stellar & Soroban)
-* **Soroban Caution Deposit Escrow**: Security deposits are locked inside an autonomous Rust smart contract on Soroban. The deposit cannot be unilaterally confiscated by the landlord. Upon peaceful vacancy, the contract automatically refunds the deposit to the tenant.
+* **Soroban Caution Deposit Escrow**: Security deposits are locked inside an autonomous Rust smart contract on Soroban ([`contracts/soroban_rental_escrow/`](./contracts/soroban_rental_escrow/)). The deposit cannot be unilaterally confiscated by the landlord. Upon peaceful vacancy, the contract automatically refunds the deposit to the tenant.
 * **Zero-Fee Micropayment Rent Streaming**: Eliminates the crushing 1-year upfront rent requirement. Tenants can pay monthly or bi-weekly using **Stellar USDC** or local stablecoins (such as **cNGN**), with transaction fees under $0.0001.
-* **Anchor Interoperability (SEP-24 / SEP-6)**: Integrates with Stellar anchors (Flutterwave, Yellow Card, MoneyGram) so unbanked tenants can fund their rental escrow using local cash over-the-counter or mobile money.
+* **Anchor Interoperability (SEP-24 / SEP-6)**: Integrates with regulated Stellar anchors so unbanked tenants can fund their rental escrow using local bank transfers, USSD, or cash over-the-counter.
 * **Verifiable On-Chain Tenancy Deeds**: Every lease agreement is stamped with a SHA-256 cryptographic hash registered on the Stellar ledger, creating tamper-proof proof of address and building an on-chain credit history for tenants.
-
----
-
-## 🔒 Soroban Smart Contract Architecture (`contracts/soroban_rental_escrow/`)
-
-Our core Soroban smart contract is written in idiomatic Rust and implements sovereign rental escrow primitives:
-
-```rust
-pub trait RentalEscrowTrait {
-    /// Initialize contract with admin address and accepted token (USDC / XLM)
-    fn initialize(env: Env, admin: Address, token: Address);
-
-    /// Create a new lease escrow agreement with cryptographic property digest
-    fn create_lease(
-        env: Env,
-        tenant: Address,
-        landlord: Address,
-        rent_amount: i128,
-        caution_deposit: i128,
-        lease_duration_days: u64,
-        property_hash: BytesN<32>,
-    ) -> u64;
-
-    /// Tenant deposits rent + caution deposit into the Soroban escrow
-    fn fund_lease(env: Env, lease_id: u64, caller: Address);
-
-    /// Disburse periodic rent to landlord after move-in verification
-    fn disburse_rent(env: Env, lease_id: u64, caller: Address);
-
-    /// Return caution deposit back to tenant upon verified completion
-    fn release_deposit(env: Env, lease_id: u64, caller: Address);
-
-    /// Trigger dispute arbitration if damage is claimed
-    fn raise_dispute(env: Env, lease_id: u64, caller: Address, reason: String);
-
-    /// Multi-sig arbitrator resolves disputed caution deposit
-    fn resolve_dispute(
-        env: Env,
-        lease_id: u64,
-        admin: Address,
-        tenant_refund: i128,
-        landlord_payout: i128,
-    );
-}
-```
 
 ---
 
@@ -137,35 +99,7 @@ pub trait RentalEscrowTrait {
 
 ---
 
-## 🌊 Drips Wave 10 Open-Source Contribution Menu
-
-As a participating maintainer in **Drips Wave 10 (The Stellar Wave Program)**, we invite community contributors to collaborate on our open-source backlog:
-
-| Issue | Complexity | Drips Points | Description |
-| :--- | :--- | :--- | :--- |
-| **#1** | **Trivial** | **100 Pts** | Document Stellar Testnet RPC endpoints, Soroban CLI setup, and faucet funding in `docs/STELLAR_SETUP.md`. |
-| **#2** | **Trivial** | **100 Pts** | Add Freighter Wallet install detector and status pill to main navigation bar. |
-| **#3** | **Medium** | **150 Pts** | Implement `@stellar/freighter-api` connection hook with account state & network switching. |
-| **#4** | **Medium** | **150 Pts** | Build TypeScript Soroban Client SDK wrapper for invoking `create_lease` and `fund_lease`. |
-| **#5** | **Medium** | **150 Pts** | Create Caution Deposit Escrow Modal displaying Stellar USDC balance and deposit authorization. |
-| **#6** | **High** | **200 Pts** | Write comprehensive Soroban Rust contract unit tests covering lease timeouts and mutual refunds. |
-| **#7** | **High** | **200 Pts** | Implement 2-of-3 multi-sig dispute arbitration mechanism in `soroban_rental_escrow`. |
-
-*All issues will be tagged with `Stellar Wave` on GitHub for instant Drips synchronization.*
-
----
-
-## 🚀 Alignment with the Stellar Community Fund (SCF)
-
-LumensLease is architected as a commercial product for the **Stellar Community Fund (SCF) Build Awards**:
-* **High-Impact Real-World Utility:** Directly combats real estate exploitation and deposit theft in developing African economies.
-* **Soroban Adoption Catalyst:** Demonstrates a non-speculative, real-world consumer use case for Soroban smart contracts.
-* **Stablecoin Velocity:** Drives continuous transaction volume in Stellar USDC and regional stablecoins (cNGN) via recurring rent escrows.
-* **Financial Inclusion:** Turns rent payments into an on-chain verifiable identity and credit profile for unbanked tenants.
-
----
-
-## 🛠️ Local Development
+## 💻 Local Development
 
 ```bash
 # 1. Clone repository

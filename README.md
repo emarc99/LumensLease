@@ -2,11 +2,10 @@
 **Decentralized Rental Trust & Caution Deposit Escrow Protocol on Stellar & Soroban.**
 
 > **Lock in your verified home. Lock out the middleman. Secure your deposit on Soroban.**  
-> Built for the **Stellar Ecosystem**, participating in **Drips Wave 10** & targeted for the **Stellar Community Fund (SCF)**.
+> Built for the **Stellar Ecosystem** & targeted for the **Stellar Community Fund (SCF)**.
 
 [![Stellar](https://img.shields.io/badge/Network-Stellar%20Testnet-08B5E5?logo=stellar)](https://stellar.org)
 [![Soroban](https://img.shields.io/badge/Smart%20Contracts-Soroban%20Rust-black?logo=rust)](https://soroban.stellar.org)
-[![Drips Wave 10](https://img.shields.io/badge/Drips%20Wave-Wave%2010%20Maintainer-5C4EBA)](https://docs.drips.network/wave)
 [![Settlement](https://img.shields.io/badge/Settlement-Stellar%20USDC%20%7C%20cNGN-2775CA)](https://stellar.org)
 [![Live Frontend](https://img.shields.io/badge/Live%20App-CloudFront%20LOS50%20Edge-orange)](https://d1dco6ew3il05x.cloudfront.net)
 [![Middleman Fees](https://img.shields.io/badge/Agent%20Markups-0%25-brightgreen)](https://d1dco6ew3il05x.cloudfront.net/calculator/)
@@ -22,12 +21,9 @@
 
 ---
 
-## ⚡ Quick Documentation Links
+## ⚡ Protocol Roadmap & Specifications
 
 * 🗺️ **[Protocol Roadmap & Milestones](./docs/ROADMAP.md)**: Real phase statuses (Phase 0 partially completed, Phase 1 ongoing) and P1/P2/P3 priorities.
-* 🔒 **[Soroban Smart Contract Architecture](./docs/SOROBAN_ARCHITECTURE.md)**: Rust contract trait, escrow state machine, and storage TTL lifecycle.
-* 🌊 **[Drips Wave 10 Contribution Backlog](./docs/DRIPS_WAVE.md)**: Open-source issues, complexity levels, and point rewards.
-* 🚀 **[Stellar Community Fund (SCF) Alignment](./docs/SCF_ALIGNMENT.md)**: Real-world utility, Soroban adoption thesis, and stablecoin velocity.
 
 ---
 
@@ -137,4 +133,4 @@ cargo build --target wasm32-unknown-unknown --release
 
 ## 📄 License
 
-Licensed under the [MIT License](./LICENSE). Built with pride for the **Stellar Ecosystem** and **Drips Wave 10**.
+Licensed under the [MIT License](./LICENSE). Built with pride for the **Stellar Ecosystem**.

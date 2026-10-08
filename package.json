@@ -1,7 +1,8 @@
-{
-  "name": "lockhouse",
+﻿{
+  "name": "lumenslease",
   "version": "1.0.0",
   "private": true,
+  "description": "Decentralized Rental Trust & Caution Deposit Escrow Protocol on Stellar & Soroban",
   "scripts": {
     "dev": "next dev",
     "build": "next build",

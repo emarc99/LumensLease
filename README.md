@@ -48,42 +48,58 @@ In emerging urban centers across Africa (Lagos, Ibadan, Abuja, Nairobi), renting
 
 ```
                               LUMENSLEASE DUAL-ENGINE ARCHITECTURE
+                      Decentralized Rental Trust & Caution Deposit Escrow
 
-      +-----------------------------------------------------------------------------+
-      |                   LAYER 1: OFF-CHAIN AI & EDGE INTELLIGENCE                 |
-      |                                                                             |
-      |  +-----------------------+  +-----------------------+  +-----------------+  |
-      |  | Landlord Voice Studio |  | Computer Vision Audit |  | Statutory Lease |  |
-      |  | Nigerian Phonetic NLP |  | Solar, Meter & Security| | Legal Generator |  |
-      |  +-----------------------+  +-----------------------+  +-----------------+  |
-      +-----------------------------------------------------------------------------+
-                     |                          |                        |
-      +-----------------------------------------------------------------------------+
-      |              LAYER 2: ON-CHAIN FINANCIAL TRUST (STELLAR & SOROBAN)          |
-      |                                                                             |
-      |   +------------------------+             +---------------------------+      |
-      |   | Soroban Rental Escrow  |             | Stellar Payment Rails     |      |
-      |   |   Caution Deposit Lock |             |   Stellar USDC & cNGN     |      |
-      |   |   Milestone Rent Flow  |             |   Sub-Cent Micropayments  |      |
-      |   |   2-of-3 Arbitration   |             |   Anchor On-Ramps (SEP-24)|      |
-      |   +------------------------+             +---------------------------+      |
-      +-----------------------------------------------------------------------------+
-                      |                                         |
-                                   [ STELLAR LEDGER ]
-                             Cryptographic Tenancy Deeds
-                             Verifiable Tenant Credit History
+ +-----------------------------------------------------------------------------------------+
+ |                      LAYER 1: OFF-CHAIN AI & EDGE INTELLIGENCE                          |
+ |                                                                                         |
+ |  +--------------------------+  +--------------------------+  +-----------------------+  |
+ |  |  Landlord Voice Studio   |  |   Computer Vision Audit  |  |   Statutory Contract  |  |
+ |  | • Nigerian Phonetic NLP  |  | • Conlog Meter Inspection|  | • Legal Lease Draft   |  |
+ |  | • Pidgin Audio Pipeline  |  | • Solar/Inverter Detect  |  | • SHA-256 Digest      |  |
+ |  | • Voice-to-Listing Agent |  | • Move-In/Out Delta Diff |  | • Utility Truth Card  |  |
+ |  +--------------------------+  +--------------------------+  +-----------------------+  |
+ +-----------------------------------------------------------------------------------------+
+               │                                │                              │
+               │ Cryptographic Lease Digest     │ Damage Evidence Hashes       │ WebAuthn /
+               │ (Property SHA-256)             │ (Inspection Audit State)     │ Biometric Sig
+               ▼                                ▼                              ▼
+ +-----------------------------------------------------------------------------------------+
+ |             LAYER 2: ON-CHAIN FINANCIAL TRUST & PROTOCOL ENGINE (STELLAR & SOROBAN)     |
+ |                                                                                         |
+ |  +--------------------------------------------+  +------------------------------------+ |
+ |  |      SOROBAN RENTAL ESCROW PROTOCOL        |  |     STELLAR LIQUIDITY & RAMPS      | |
+ |  | • Non-Custodial Caution Deposit Lock       |  | • Stellar USDC & cNGN Settlement   | |
+ |  | • Milestone / Micro-Rent Streaming         |  | • Reflector Oracle (NGN/USD Feeds) | |
+ |  | • 2-of-3 Multi-Sig Dispute Arbitration     |  | • Soroswap / Phoenix DEX Swaps     | |
+ |  | • Persistent Storage TTL & Rent Extension  |  | • Anchor Ramps (SEP-24, 6, 38)     | |
+ |  +--------------------------------------------+  +------------------------------------+ |
+ |                                       │                                                 |
+ |  +-----------------------------------------------------------------------------------+  |
+ |  |                      ACCOUNT ABSTRACTION & IDENTITY LAYER                         |  |
+ |  |  • Soroban Passkey Kit (FaceID/TouchID)  • SEP-10 WebAuth  • SEP-30 Key Recovery  |  |
+ |  +-----------------------------------------------------------------------------------+  |
+ +-----------------------------------------------------------------------------------------+
+                                         │
+                                         ▼
+                            [ STELLAR CONSENSUS LEDGER ]
+                     • Immutable Tenancy Deeds & Evidence Hashes
+                     • Trustless Caution Deposit Escrow Balance
+                     • Verifiable On-Chain Tenant Credit & Reputation
 ```
 
 ### 1. Off-Chain AI & Edge Verification Layer
 * **Landlord Voice Studio (`/studio`)**: Older property owners tap a microphone and speak naturally in English, Nigerian Pidgin, or regional accents. Our custom phonetic normalizer maps local speech (*"so lah"* $\rightarrow$ solar inverter, *"two virus"* $\rightarrow$ inverter batteries, *"what are running"* $\rightarrow$ treated borehole water) into structured listings.
-* **Computer Vision Property Audit (`src/lib/computerVision.ts`)**: Client-side canvas inspection and feature detection automatically verify **Prepaid Meters**, **Solar Battery Banks**, and **Gated Compound Security** directly from uploaded images.
-* **Utility Truth Scorecard**: Guaranteed transparency on daily grid power hours, backup solar capacity, and treated water before inspection.
+* **Computer Vision Property Audit (`src/lib/computerVision.ts`)**: Client-side canvas inspection and feature detection automatically verify **Prepaid Meters**, **Solar Battery Banks**, and **Gated Compound Security** directly from uploaded images, creating a move-in baseline to evaluate future damage claims.
+* **Statutory Lease Generator & Cryptographic Digest**: Auto-generates court-ready legal lease documents bound to a **SHA-256 digest** (`property_hash`), immutably tying the physical property condition to the on-chain escrow.
 
 ### 2. On-Chain Financial Trust Layer (Stellar & Soroban)
 * **Soroban Caution Deposit Escrow**: Security deposits are locked inside an autonomous Rust smart contract on Soroban ([`contracts/soroban_rental_escrow/`](./contracts/soroban_rental_escrow/)). The deposit cannot be unilaterally confiscated by the landlord. Upon peaceful vacancy, the contract automatically refunds the deposit to the tenant.
-* **Zero-Fee Micropayment Rent Streaming**: Eliminates the crushing 1-year upfront rent requirement. Tenants can pay monthly or bi-weekly using **Stellar USDC** or local stablecoins (such as **cNGN**), with transaction fees under $0.0001.
-* **Anchor Interoperability (SEP-24 / SEP-6)**: Integrates with regulated Stellar anchors so unbanked tenants can fund their rental escrow using local bank transfers, USSD, or cash over-the-counter.
-* **Verifiable On-Chain Tenancy Deeds**: Every lease agreement is stamped with a SHA-256 cryptographic hash registered on the Stellar ledger, creating tamper-proof proof of address and building an on-chain credit history for tenants.
+* **Account Abstraction via Soroban Passkey Kit**: Eliminates seed phrases and browser extensions. Renters and landlords sign agreements and release funds using smartphone biometrics (**FaceID / TouchID**), underpinned by **SEP-10** cryptographic auth and **SEP-30** account recovery servers.
+* **Reflector Oracle Price Feeds**: Connects decentralized price feeds for `cNGN / USD` and `XLM / USD`, allowing leases to be negotiated in local Naira while escrowing and disbursing in inflation-hedged **Stellar USDC**.
+* **Soroswap / Phoenix DEX Swaps**: Enables atomic in-contract token routing, allowing tenants to pay rent in any supported Stellar asset (`cNGN`, `XLM`) while landlords receive pure USDC.
+* **Anchor Banking Rails (SEP-24 / SEP-6 / SEP-38)**: Integrates with regulated African Stellar anchors so unbanked tenants can fund their rental escrow directly via Nigerian bank transfers, USSD, or cash over-the-counter.
+* **Verifiable On-Chain Tenancy Deeds**: Every lease agreement and completed rent cycle is recorded on the Stellar ledger, building an undeniable on-chain credit and address history for tenants.
 
 ---
 

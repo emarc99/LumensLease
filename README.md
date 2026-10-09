@@ -1,4 +1,4 @@
-﻿# 🏢 LumensLease
+# 🏢 LumensLease
 **Decentralized Rental Trust & Caution Deposit Escrow Protocol on Stellar & Soroban.**
 
 > **Lock in your verified home. Lock out the middleman. Secure your deposit on Soroban.**  
@@ -15,6 +15,8 @@
 ## 🔗 Live Deployments & Endpoints
 
 * **Global Web Application**: [https://d1dco6ew3il05x.cloudfront.net](https://d1dco6ew3il05x.cloudfront.net)
+* **Deployed Soroban Contract (Stellar Testnet)**: [`CBK6CZCHOUNZOPBYZCIVFUVUAVBGIBLUOY3KPB4RQL6ISMQQKJYZYYZE`](https://stellar.expert/explorer/testnet/contract/CBK6CZCHOUNZOPBYZCIVFUVUAVBGIBLUOY3KPB4RQL6ISMQQKJYZYYZE)
+* **Contract Deploy Transaction**: [View on Stellar Expert](https://stellar.expert/explorer/testnet/tx/21d6fa783d747820b26e9924c0d3586ddd9ee88b069766d1627255bd99896528)
 * **Landlord Voice Studio**: [https://d1dco6ew3il05x.cloudfront.net/studio/](https://d1dco6ew3il05x.cloudfront.net/studio/)
 * **Middleman Savings Calculator**: [https://d1dco6ew3il05x.cloudfront.net/calculator/](https://d1dco6ew3il05x.cloudfront.net/calculator/)
 * **Soroban Contract Suite**: [`contracts/soroban_rental_escrow/`](./contracts/soroban_rental_escrow/)

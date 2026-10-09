@@ -6,7 +6,8 @@ import { useWallet } from '../context/WalletContext';
 import { 
   Zap, Droplet, Shield, Gauge, MessageSquare, Check, X, 
   UserCheck, FileCheck, ShieldCheck, 
-  Star, Award, CheckCircle2, Cpu, Loader2
+  Star, Award, CheckCircle2, Cpu, Loader2,
+  Wrench, Fuel, Users
 } from 'lucide-react';
 import { invokeSubmitTenantReview, STELLAR_CONFIG } from '../lib/stellar';
 import Link from 'next/link';
@@ -476,7 +477,7 @@ export default function PropertyDetailModal() {
             </div>
           </div>
 
-          {/* HARDWARE COMPUTER VISION AUDIT */}
+          {/* HARDWARE COMPUTER VISION & COMMUNITY SCOUT PHYSICAL AUDIT */}
           <div style={{
             background: 'rgba(10, 13, 20, 0.8)',
             border: '1px solid var(--border-bold)',
@@ -484,21 +485,52 @@ export default function PropertyDetailModal() {
             padding: '14px',
             display: 'flex',
             flexDirection: 'column',
-            gap: '8px'
+            gap: '12px'
           }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
               <span className="mono" style={{ fontSize: '0.75rem', color: 'var(--teal-light)', fontWeight: 700 }}>
-                🔍 COMPUTER VISION HARDWARE AUDIT FINDINGS (BOUND TO ON-CHAIN SHA-256 DIGEST):
+                🔍 HARDWARE & COMMUNITY SCOUT AUDIT (CONTRACT: {STELLAR_CONFIG.contracts.communityScoutVerifier.slice(0, 8)}...):
               </span>
               <span style={{ fontSize: '0.7rem', color: '#10b981', fontWeight: 700 }}>
-                ✓ Cryptographically Bound
+                ✓ GPS & Meter Cryptographically Bound
               </span>
             </div>
-            {prop.aiAuditNotes.map((note, idx) => (
-              <div key={idx} style={{ fontSize: '0.82rem', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <span>{note}</span>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '8px', background: 'rgba(0,0,0,0.3)', padding: '10px', borderRadius: '6px' }}>
+              <div>
+                <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>CONLOG METER SERIAL</span>
+                <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#38bdf8' }}>CONLOG-041928471-LAGOS</div>
               </div>
-            ))}
+              <div>
+                <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>SOLAR INVERTER AUDIT</span>
+                <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#fbbf24' }}>5kVA Pure Sine Wave Verified</div>
+              </div>
+              <div>
+                <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>ON-SITE SCOUT BOUNTY</span>
+                <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#34d399' }}>20 XLM Paid via Soroban</div>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              {prop.aiAuditNotes.map((note, idx) => (
+                <div key={idx} style={{ fontSize: '0.82rem', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <span>{note}</span>
+                </div>
+              ))}
+            </div>
+
+            {/* Habitability SLA & Guarantor Protection Strip */}
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', borderTop: '1px solid #1e293b', paddingTop: '10px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'rgba(249, 115, 22, 0.1)', padding: '4px 8px', borderRadius: '4px', border: '1px solid rgba(249, 115, 22, 0.2)' }}>
+                <Wrench size={13} color="#f97316" />
+                <span style={{ fontSize: '0.72rem', color: '#f97316', fontWeight: 700 }}>48h Emergency SLA Repair Vault Backed</span>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'rgba(6, 182, 212, 0.1)', padding: '4px 8px', borderRadius: '4px', border: '1px solid rgba(6, 182, 212, 0.2)' }}>
+                <Users size={13} color="#06b6d4" />
+                <span style={{ fontSize: '0.72rem', color: '#06b6d4', fontWeight: 700 }}>Co-Signer Surety Stake Accepted</span>
+              </div>
+            </div>
           </div>
 
           {/* Description & Rules */}

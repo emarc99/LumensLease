@@ -23,6 +23,8 @@ import {
   ArrowRight,
   Flame,
   BadgeCheck,
+  Users,
+  Check,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import Link from 'next/link';
@@ -390,6 +392,96 @@ export default function TenantPassportPage() {
                   ✓ Attestation recorded on Soroban! Tx: <code>{recentTx.slice(0, 16)}...</code>
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+
+        {/* Co-Signer Guarantor & Employer Income Attestations */}
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+            gap: '24px',
+            marginBottom: '32px',
+          }}
+        >
+          {/* Guarantor Bond Card */}
+          <div
+            style={{
+              backgroundColor: '#0c111d',
+              border: '1px solid #1e293b',
+              borderRadius: '14px',
+              padding: '24px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '14px',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Users size={18} color="#06b6d4" />
+                <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 700, color: '#f8fafc' }}>
+                  Attached Guarantor & Surety Stake
+                </h3>
+              </div>
+              <span style={{ fontSize: '0.72rem', color: '#10b981', fontWeight: 700, background: 'rgba(16, 185, 129, 0.1)', padding: '2px 8px', borderRadius: '4px' }}>
+                ✓ Staked on Soroban
+              </span>
+            </div>
+
+            <p style={{ margin: 0, fontSize: '0.82rem', color: '#94a3b8' }}>
+              Contract <code style={{ color: '#06b6d4' }}>{STELLAR_CONFIG.contracts.rentalGuarantorVault.slice(0, 12)}...</code> holds 100 XLM surety stake pledged by co-signer, bridging credit threshold for prime properties.
+            </p>
+
+            <div style={{ background: 'rgba(0,0,0,0.3)', padding: '12px', borderRadius: '8px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem' }}>
+                <span style={{ color: '#94a3b8' }}>Pledging Guarantor:</span>
+                <code style={{ color: '#06b6d4' }}>GB7B2K36M6WVTQYXX4D2OXZXU77F2R...</code>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem' }}>
+                <span style={{ color: '#94a3b8' }}>Surety Collateral:</span>
+                <span style={{ color: '#f8fafc', fontWeight: 700 }}>100 XLM Locked</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Income Verification Card */}
+          <div
+            style={{
+              backgroundColor: '#0c111d',
+              border: '1px solid #1e293b',
+              borderRadius: '14px',
+              padding: '24px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '14px',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Shield size={18} color="#fbbf24" />
+                <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 700, color: '#f8fafc' }}>
+                  Employer Income Attestation (ZK)
+                </h3>
+              </div>
+              <span style={{ fontSize: '0.72rem', color: '#34d399', fontWeight: 700, background: 'rgba(52, 211, 153, 0.1)', padding: '2px 8px', borderRadius: '4px' }}>
+                ✓ Employer Verified
+              </span>
+            </div>
+
+            <p style={{ margin: 0, fontSize: '0.82rem', color: '#94a3b8' }}>
+              Cryptographically hashes monthly salary verification (4.2x monthly rent requirement) directly on the Passport contract without revealing sensitive banking credentials.
+            </p>
+
+            <div style={{ background: 'rgba(0,0,0,0.3)', padding: '12px', borderRadius: '8px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem' }}>
+                <span style={{ color: '#94a3b8' }}>Verified Monthly Income:</span>
+                <span style={{ color: '#f8fafc', fontWeight: 700 }}>$1,850 USD Equiv.</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem' }}>
+                <span style={{ color: '#94a3b8' }}>Rent-to-Income Ratio:</span>
+                <span style={{ color: '#10b981', fontWeight: 700 }}>18.4% (Tier 1 Low-Risk)</span>
+              </div>
             </div>
           </div>
         </div>

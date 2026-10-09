@@ -17,6 +17,19 @@ import {
   invokeRaiseDispute,
   invokeResolveDispute,
   STELLAR_CONFIG,
+  getSavedMaintenanceRequests,
+  invokeRequestMaintenance,
+  invokeApproveMaintenancePayout,
+  invokeClaimSlaAutoRelease,
+  MaintenanceRequestRecord,
+  getSavedGuarantorBonds,
+  invokeStakeGuarantorBond,
+  invokeReleaseGuarantorBond,
+  GuarantorBondRecord,
+  getSavedUtilityPools,
+  invokeDepositUtilityReserve,
+  invokeDisburseUtilityExpense,
+  UtilityPoolRecord,
 } from '../../lib/stellar';
 import {
   Shield,
@@ -36,6 +49,8 @@ import {
   Wrench,
   Ban,
   Check,
+  Fuel,
+  Users,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import Link from 'next/link';
@@ -43,18 +58,27 @@ import Link from 'next/link';
 export default function EscrowConsolePage() {
   const { walletState, connectDemoWallet, connectFreighter, isConnecting } = useWallet();
   const [leases, setLeases] = useState<OnChainLeaseRecord[]>([]);
+  const [maintenanceList, setMaintenanceList] = useState<MaintenanceRequestRecord[]>([]);
+  const [utilityPools, setUtilityPools] = useState<UtilityPoolRecord[]>([]);
+  const [guarantorBonds, setGuarantorBonds] = useState<GuarantorBondRecord[]>([]);
+  const [activeTab, setActiveTab] = useState<'leases' | 'maintenance' | 'utility' | 'guarantors'>('leases');
   const [actionLoading, setActionLoading] = useState<{ [key: string]: boolean }>({});
   const [selectedDisputeLease, setSelectedDisputeLease] = useState<number | null>(null);
   const [selectedDamageLease, setSelectedDamageLease] = useState<number | null>(null);
   const [damageAmountInput, setDamageAmountInput] = useState('10');
   const [disputeReason, setDisputeReason] = useState('Damaged inverter batteries and cracked bathroom tiles');
 
-  const reloadLeases = () => {
+  const reloadData = () => {
     setLeases(getSavedLeases());
+    setMaintenanceList(getSavedMaintenanceRequests());
+    setUtilityPools(getSavedUtilityPools());
+    setGuarantorBonds(getSavedGuarantorBonds());
   };
 
+  const reloadLeases = reloadData;
+
   useEffect(() => {
-    reloadLeases();
+    reloadData();
   }, []);
 
   const totalValueLockedXlm = leases.reduce((acc, l) => {
@@ -180,6 +204,68 @@ export default function EscrowConsolePage() {
       confetti({ particleCount: 80, spread: 60 });
     } finally {
       setActionLoading((prev) => ({ ...prev, [`resolve_${lease.leaseId}`]: false }));
+    }
+  };
+
+  const handleApproveMaintenance = async (reqId: number) => {
+    setActionLoading((prev) => ({ ...prev, [`maint_approve_${reqId}`]: true }));
+    try {
+      await invokeApproveMaintenancePayout(reqId, walletState.publicKey || 'GDV5V...DEMO');
+      reloadData();
+      confetti({ particleCount: 60, spread: 50 });
+    } finally {
+      setActionLoading((prev) => ({ ...prev, [`maint_approve_${reqId}`]: false }));
+    }
+  };
+
+  const handleClaimSlaMaintenance = async (reqId: number) => {
+    setActionLoading((prev) => ({ ...prev, [`maint_sla_${reqId}`]: true }));
+    try {
+      await invokeClaimSlaAutoRelease(reqId, walletState.publicKey || 'GDV5V...DEMO');
+      reloadData();
+      confetti({ particleCount: 70, spread: 60 });
+    } finally {
+      setActionLoading((prev) => ({ ...prev, [`maint_sla_${reqId}`]: false }));
+    }
+  };
+
+  const handleDepositUtility = async (poolId: number) => {
+    setActionLoading((prev) => ({ ...prev, [`util_dep_${poolId}`]: true }));
+    try {
+      await invokeDepositUtilityReserve(poolId, walletState.publicKey || 'GDV5V...DEMO', 50);
+      reloadData();
+      confetti({ particleCount: 50, spread: 45 });
+    } finally {
+      setActionLoading((prev) => ({ ...prev, [`util_dep_${poolId}`]: false }));
+    }
+  };
+
+  const handleDisburseUtility = async (poolId: number) => {
+    setActionLoading((prev) => ({ ...prev, [`util_disb_${poolId}`]: true }));
+    try {
+      const receiptHash = 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855';
+      await invokeDisburseUtilityExpense(
+        poolId,
+        walletState.publicKey || 'GDV5V...DEMO',
+        40,
+        'TOTAL-ENERGIES-LEKKI-DEPOT',
+        receiptHash
+      );
+      reloadData();
+      confetti({ particleCount: 60, spread: 55 });
+    } finally {
+      setActionLoading((prev) => ({ ...prev, [`util_disb_${poolId}`]: false }));
+    }
+  };
+
+  const handleReleaseGuarantor = async (bondId: number) => {
+    setActionLoading((prev) => ({ ...prev, [`guar_rel_${bondId}`]: true }));
+    try {
+      await invokeReleaseGuarantorBond(bondId, walletState.publicKey || 'GDV5V...DEMO');
+      reloadData();
+      confetti({ particleCount: 80, spread: 60 });
+    } finally {
+      setActionLoading((prev) => ({ ...prev, [`guar_rel_${bondId}`]: false }));
     }
   };
 
@@ -345,7 +431,7 @@ export default function EscrowConsolePage() {
             borderRadius: '12px',
             background: 'linear-gradient(90deg, rgba(2, 132, 199, 0.12) 0%, rgba(147, 51, 234, 0.12) 100%)',
             border: '1px solid #334155',
-            marginBottom: '32px',
+            marginBottom: '28px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
@@ -357,10 +443,10 @@ export default function EscrowConsolePage() {
             <Scale size={20} color="#38bdf8" />
             <div>
               <div style={{ fontWeight: 700, fontSize: '0.92rem', color: '#f8fafc' }}>
-                Complete 4-Contract Soroban Infrastructure
+                Complete 10-Contract Soroban Infrastructure on Testnet
               </div>
               <div style={{ fontSize: '0.8rem', color: '#94a3b8' }}>
-                Explore Tenant Credit Passport and Decentralized Community Jury rooms.
+                Caution Escrow · Landlord Rep · Credit Passport · 2-of-3 Jury · SBT Deeds · Stream Vault · SLA Repairs · Guarantor Bonds · Scout Audits · Utility Pool.
               </div>
             </div>
           </div>
@@ -379,7 +465,7 @@ export default function EscrowConsolePage() {
                 textDecoration: 'none',
               }}
             >
-              Tenant Credit Passport →
+              Credit Passport →
             </Link>
 
             <Link
@@ -400,18 +486,88 @@ export default function EscrowConsolePage() {
           </div>
         </div>
 
-        {/* Active On-Chain Leases Feed */}
-        <div style={{ marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <h2 style={{ fontSize: '1.25rem', fontWeight: 800, margin: 0, color: '#f8fafc' }}>
-            On-Chain Lease Agreements ({leases.length})
-          </h2>
-          <span style={{ fontSize: '0.82rem', color: '#94a3b8' }}>
-            Live Smart Contract States
-          </span>
+        {/* Protocol Module Tabs */}
+        <div style={{ display: 'flex', gap: '8px', marginBottom: '24px', flexWrap: 'wrap', borderBottom: '1px solid #1e293b', paddingBottom: '12px' }}>
+          <button
+            onClick={() => setActiveTab('leases')}
+            style={{
+              background: activeTab === 'leases' ? 'rgba(56, 189, 248, 0.15)' : '#0f172a',
+              color: activeTab === 'leases' ? '#38bdf8' : '#94a3b8',
+              border: activeTab === 'leases' ? '1px solid #38bdf8' : '1px solid #1e293b',
+              padding: '8px 16px',
+              borderRadius: '8px',
+              fontSize: '0.85rem',
+              fontWeight: 700,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+            }}
+          >
+            <Shield size={16} /> On-Chain Leases ({leases.length})
+          </button>
+
+          <button
+            onClick={() => setActiveTab('maintenance')}
+            style={{
+              background: activeTab === 'maintenance' ? 'rgba(249, 115, 22, 0.15)' : '#0f172a',
+              color: activeTab === 'maintenance' ? '#f97316' : '#94a3b8',
+              border: activeTab === 'maintenance' ? '1px solid #f97316' : '1px solid #1e293b',
+              padding: '8px 16px',
+              borderRadius: '8px',
+              fontSize: '0.85rem',
+              fontWeight: 700,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+            }}
+          >
+            <Wrench size={16} /> 48h Emergency Repairs SLA ({maintenanceList.length})
+          </button>
+
+          <button
+            onClick={() => setActiveTab('utility')}
+            style={{
+              background: activeTab === 'utility' ? 'rgba(236, 72, 153, 0.15)' : '#0f172a',
+              color: activeTab === 'utility' ? '#ec4899' : '#94a3b8',
+              border: activeTab === 'utility' ? '1px solid #ec4899' : '1px solid #1e293b',
+              padding: '8px 16px',
+              borderRadius: '8px',
+              fontSize: '0.85rem',
+              fontWeight: 700,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+            }}
+          >
+            <Fuel size={16} /> Shared Diesel & Power Pool ({utilityPools.length})
+          </button>
+
+          <button
+            onClick={() => setActiveTab('guarantors')}
+            style={{
+              background: activeTab === 'guarantors' ? 'rgba(6, 182, 212, 0.15)' : '#0f172a',
+              color: activeTab === 'guarantors' ? '#06b6d4' : '#94a3b8',
+              border: activeTab === 'guarantors' ? '1px solid #06b6d4' : '1px solid #1e293b',
+              padding: '8px 16px',
+              borderRadius: '8px',
+              fontSize: '0.85rem',
+              fontWeight: 700,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+            }}
+          >
+            <Users size={16} /> Guarantor Surety Bonds ({guarantorBonds.length})
+          </button>
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-          {leases.map((lease) => {
+        {activeTab === 'leases' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            {leases.map((lease) => {
             const badge = getStatusBadge(lease.status);
             const isFundLoading = actionLoading[`fund_${lease.leaseId}`];
             const isDisburseLoading = actionLoading[`disburse_${lease.leaseId}`];
@@ -883,6 +1039,451 @@ export default function EscrowConsolePage() {
             );
           })}
         </div>
+      )}
+
+        {/* =========================================================================
+            TAB 2: PROPERTY MAINTENANCE & 48-HOUR EMERGENCY SLA REPAIR VAULT
+            ========================================================================= */}
+        {activeTab === 'maintenance' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            <div
+              style={{
+                padding: '20px',
+                borderRadius: '12px',
+                backgroundColor: 'rgba(249, 115, 22, 0.08)',
+                border: '1px solid rgba(249, 115, 22, 0.3)',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                flexWrap: 'wrap',
+                gap: '16px',
+              }}
+            >
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#f97316', fontWeight: 800, fontSize: '1.1rem' }}>
+                  <Wrench size={20} />
+                  Emergency Maintenance & 48-Hour SLA Vault (Soroban)
+                </div>
+                <p style={{ margin: '6px 0 0 0', color: '#cbd5e1', fontSize: '0.85rem', maxWidth: '720px' }}>
+                  Contract <code style={{ color: '#f97316' }}>{STELLAR_CONFIG.contracts.propertyMaintenanceVault.slice(0, 16)}...</code> enforces statutory habitability. If critical solar power or borehole systems fail and the landlord does not disburse within 48 hours, the protocol autonomously releases payment to the certified technician.
+                </p>
+              </div>
+
+              <a
+                href={`https://stellar.expert/explorer/testnet/contract/${STELLAR_CONFIG.contracts.propertyMaintenanceVault}`}
+                target="_blank"
+                rel="noreferrer"
+                style={{
+                  background: 'rgba(249, 115, 22, 0.2)',
+                  color: '#fb923c',
+                  border: '1px solid rgba(249, 115, 22, 0.4)',
+                  padding: '8px 14px',
+                  borderRadius: '6px',
+                  fontSize: '0.8rem',
+                  fontWeight: 700,
+                  textDecoration: 'none',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                }}
+              >
+                Explorer <ExternalLink size={14} />
+              </a>
+            </div>
+
+            {maintenanceList.map((req) => {
+              const isApproveLoading = actionLoading[`maint_approve_${req.requestId}`];
+              const isSlaLoading = actionLoading[`maint_sla_${req.requestId}`];
+
+              return (
+                <div
+                  key={req.requestId}
+                  style={{
+                    backgroundColor: '#0c111d',
+                    border: '1px solid #1e293b',
+                    borderRadius: '12px',
+                    padding: '20px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '14px',
+                  }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <span style={{ fontSize: '1rem', fontWeight: 800, color: '#f8fafc' }}>
+                        Repair Request #{req.requestId} · Lease #{req.leaseId}
+                      </span>
+                      <span
+                        style={{
+                          backgroundColor:
+                            req.status === 'Completed'
+                              ? 'rgba(16, 185, 129, 0.15)'
+                              : req.status === 'AutoReleasedSLA'
+                              ? 'rgba(249, 115, 22, 0.2)'
+                              : 'rgba(56, 189, 248, 0.15)',
+                          color:
+                            req.status === 'Completed'
+                              ? '#34d399'
+                              : req.status === 'AutoReleasedSLA'
+                              ? '#fb923c'
+                              : '#38bdf8',
+                          padding: '3px 10px',
+                          borderRadius: '4px',
+                          fontSize: '0.75rem',
+                          fontWeight: 700,
+                        }}
+                      >
+                        {req.status === 'AutoReleasedSLA' ? '⚡ 48H SLA AUTO-DISBURSED' : req.status.toUpperCase()}
+                      </span>
+                    </div>
+
+                    <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#f97316' }}>
+                      {req.costXlm} XLM
+                    </div>
+                  </div>
+
+                  <div style={{ fontSize: '0.88rem', color: '#cbd5e1' }}>
+                    <strong>Category:</strong> {req.category} · <strong>Issue:</strong> {req.description}
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '10px', background: 'rgba(0,0,0,0.3)', padding: '12px', borderRadius: '8px' }}>
+                    <div>
+                      <div style={{ fontSize: '0.72rem', color: '#94a3b8' }}>Certified Technician</div>
+                      <code style={{ fontSize: '0.78rem', color: '#38bdf8' }}>{req.technician.slice(0, 20)}...</code>
+                    </div>
+                    <div>
+                      <div style={{ fontSize: '0.72rem', color: '#94a3b8' }}>Cryptographic Proof (SHA-256)</div>
+                      <code style={{ fontSize: '0.78rem', color: '#34d399' }}>{req.evidenceHash.slice(0, 20)}...</code>
+                    </div>
+                    <div>
+                      <div style={{ fontSize: '0.72rem', color: '#94a3b8' }}>Statutory SLA Deadline</div>
+                      <span style={{ fontSize: '0.8rem', color: '#f8fafc', fontWeight: 600 }}>{req.slaHours} Hours Guaranteed</span>
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', borderTop: '1px solid #1e293b', paddingTop: '12px' }}>
+                    {req.status === 'Approved' && (
+                      <button
+                        onClick={() => handleApproveMaintenance(req.requestId)}
+                        disabled={isApproveLoading}
+                        style={{
+                          background: '#10b981',
+                          color: '#000000',
+                          border: 'none',
+                          padding: '8px 16px',
+                          borderRadius: '6px',
+                          fontWeight: 700,
+                          fontSize: '0.82rem',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        {isApproveLoading ? 'Disbursing...' : 'Disburse Technician Payout'}
+                      </button>
+                    )}
+
+                    {req.status === 'Pending' && (
+                      <button
+                        onClick={() => handleClaimSlaMaintenance(req.requestId)}
+                        disabled={isSlaLoading}
+                        style={{
+                          background: 'linear-gradient(135deg, #ea580c 0%, #c2410c 100%)',
+                          color: '#ffffff',
+                          border: 'none',
+                          padding: '8px 16px',
+                          borderRadius: '6px',
+                          fontWeight: 700,
+                          fontSize: '0.82rem',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        {isSlaLoading ? 'Enforcing SLA...' : 'Trigger 48h SLA Auto-Release'}
+                      </button>
+                    )}
+
+                    {(req.status === 'Completed' || req.status === 'AutoReleasedSLA') && (
+                      <span style={{ fontSize: '0.8rem', color: '#10b981', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <Check size={14} /> Repair Completed & Settled On-Chain
+                      </span>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* =========================================================================
+            TAB 3: MULTI-TENANT SHARED UTILITY & DIESEL POOL ESCROW
+            ========================================================================= */}
+        {activeTab === 'utility' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            <div
+              style={{
+                padding: '20px',
+                borderRadius: '12px',
+                backgroundColor: 'rgba(236, 72, 153, 0.08)',
+                border: '1px solid rgba(236, 72, 153, 0.3)',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                flexWrap: 'wrap',
+                gap: '16px',
+              }}
+            >
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#ec4899', fontWeight: 800, fontSize: '1.1rem' }}>
+                  <Fuel size={20} />
+                  Shared Estate Diesel & Grid Energy Escrow (Soroban)
+                </div>
+                <p style={{ margin: '6px 0 0 0', color: '#cbd5e1', fontSize: '0.85rem', maxWidth: '720px' }}>
+                  Contract <code style={{ color: '#ec4899' }}>{STELLAR_CONFIG.contracts.utilityBillingEscrow.slice(0, 16)}...</code> manages transparent pooling for shared generator fuel and estate prepayments. Co-tenants deposit funds into an autonomous trustless vault with cryptographic receipt verification.
+                </p>
+              </div>
+
+              <a
+                href={`https://stellar.expert/explorer/testnet/contract/${STELLAR_CONFIG.contracts.utilityBillingEscrow}`}
+                target="_blank"
+                rel="noreferrer"
+                style={{
+                  background: 'rgba(236, 72, 153, 0.2)',
+                  color: '#f472b6',
+                  border: '1px solid rgba(236, 72, 153, 0.4)',
+                  padding: '8px 14px',
+                  borderRadius: '6px',
+                  fontSize: '0.8rem',
+                  fontWeight: 700,
+                  textDecoration: 'none',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                }}
+              >
+                Explorer <ExternalLink size={14} />
+              </a>
+            </div>
+
+            {utilityPools.map((pool) => {
+              const isDepLoading = actionLoading[`util_dep_${pool.poolId}`];
+              const isDisbLoading = actionLoading[`util_disb_${pool.poolId}`];
+
+              return (
+                <div
+                  key={pool.poolId}
+                  style={{
+                    backgroundColor: '#0c111d',
+                    border: '1px solid #1e293b',
+                    borderRadius: '12px',
+                    padding: '20px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '14px',
+                  }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <span style={{ fontSize: '1rem', fontWeight: 800, color: '#f8fafc' }}>
+                        Pool #{pool.poolId} · Estate: {pool.propertyId}
+                      </span>
+                      <span style={{ backgroundColor: 'rgba(16, 185, 129, 0.15)', color: '#34d399', padding: '3px 8px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 700 }}>
+                        ACTIVE COMPOUND POOL
+                      </span>
+                    </div>
+
+                    <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#ec4899' }}>
+                      {pool.dieselReserveXlm} XLM Reserve
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px', background: 'rgba(0,0,0,0.3)', padding: '14px', borderRadius: '8px' }}>
+                    <div>
+                      <div style={{ fontSize: '0.72rem', color: '#94a3b8' }}>Grid Power Reserve</div>
+                      <div style={{ fontSize: '1rem', fontWeight: 700, color: '#38bdf8' }}>{pool.gridPowerUnits} kWh Units</div>
+                    </div>
+                    <div>
+                      <div style={{ fontSize: '0.72rem', color: '#94a3b8' }}>Contributing Tenants</div>
+                      <div style={{ fontSize: '1rem', fontWeight: 700, color: '#f8fafc' }}>{pool.totalTenants} Co-Tenants</div>
+                    </div>
+                    <div>
+                      <div style={{ fontSize: '0.72rem', color: '#94a3b8' }}>Compound Manager</div>
+                      <code style={{ fontSize: '0.78rem', color: '#94a3b8' }}>{pool.manager.slice(0, 18)}...</code>
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', borderTop: '1px solid #1e293b', paddingTop: '12px', flexWrap: 'wrap' }}>
+                    <button
+                      onClick={() => handleDepositUtility(pool.poolId)}
+                      disabled={isDepLoading}
+                      style={{
+                        background: '#1e293b',
+                        color: '#f8fafc',
+                        border: '1px solid #334155',
+                        padding: '8px 16px',
+                        borderRadius: '6px',
+                        fontWeight: 700,
+                        fontSize: '0.82rem',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      {isDepLoading ? 'Depositing...' : '+ Top Up Reserve (50 XLM)'}
+                    </button>
+
+                    <button
+                      onClick={() => handleDisburseUtility(pool.poolId)}
+                      disabled={isDisbLoading}
+                      style={{
+                        background: 'linear-gradient(135deg, #db2777 0%, #be185d 100%)',
+                        color: '#ffffff',
+                        border: 'none',
+                        padding: '8px 16px',
+                        borderRadius: '6px',
+                        fontWeight: 700,
+                        fontSize: '0.82rem',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      {isDisbLoading ? 'Verifying Receipt...' : 'Disburse Diesel Expense (40 XLM)'}
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* =========================================================================
+            TAB 4: RENTAL GUARANTOR & SURETY BOND VAULT
+            ========================================================================= */}
+        {activeTab === 'guarantors' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            <div
+              style={{
+                padding: '20px',
+                borderRadius: '12px',
+                backgroundColor: 'rgba(6, 182, 212, 0.08)',
+                border: '1px solid rgba(6, 182, 212, 0.3)',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                flexWrap: 'wrap',
+                gap: '16px',
+              }}
+            >
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#06b6d4', fontWeight: 800, fontSize: '1.1rem' }}>
+                  <Users size={20} />
+                  Rental Guarantor & Surety Bond Vault (Soroban)
+                </div>
+                <p style={{ margin: '6px 0 0 0', color: '#cbd5e1', fontSize: '0.85rem', maxWidth: '720px' }}>
+                  Contract <code style={{ color: '#06b6d4' }}>{STELLAR_CONFIG.contracts.rentalGuarantorVault.slice(0, 16)}...</code> enables co-signers, parents, or employers to stake collateral in escrow. This unlocks flexible monthly rentals for young professionals who have not yet built an extensive credit score.
+                </p>
+              </div>
+
+              <a
+                href={`https://stellar.expert/explorer/testnet/contract/${STELLAR_CONFIG.contracts.rentalGuarantorVault}`}
+                target="_blank"
+                rel="noreferrer"
+                style={{
+                  background: 'rgba(6, 182, 212, 0.2)',
+                  color: '#22d3ee',
+                  border: '1px solid rgba(6, 182, 212, 0.4)',
+                  padding: '8px 14px',
+                  borderRadius: '6px',
+                  fontSize: '0.8rem',
+                  fontWeight: 700,
+                  textDecoration: 'none',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                }}
+              >
+                Explorer <ExternalLink size={14} />
+              </a>
+            </div>
+
+            {guarantorBonds.map((bond) => {
+              const isRelLoading = actionLoading[`guar_rel_${bond.bondId}`];
+
+              return (
+                <div
+                  key={bond.bondId}
+                  style={{
+                    backgroundColor: '#0c111d',
+                    border: '1px solid #1e293b',
+                    borderRadius: '12px',
+                    padding: '20px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '14px',
+                  }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <span style={{ fontSize: '1rem', fontWeight: 800, color: '#f8fafc' }}>
+                        Surety Bond #{bond.bondId} · Lease #{bond.leaseId}
+                      </span>
+                      <span
+                        style={{
+                          backgroundColor: bond.status === 'Active' ? 'rgba(16, 185, 129, 0.15)' : 'rgba(148, 163, 184, 0.15)',
+                          color: bond.status === 'Active' ? '#34d399' : '#94a3b8',
+                          padding: '3px 8px',
+                          borderRadius: '4px',
+                          fontSize: '0.75rem',
+                          fontWeight: 700,
+                        }}
+                      >
+                        {bond.status.toUpperCase()}
+                      </span>
+                    </div>
+
+                    <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#06b6d4' }}>
+                      {bond.stakedAmountXlm} XLM Staked
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '12px', background: 'rgba(0,0,0,0.3)', padding: '14px', borderRadius: '8px' }}>
+                    <div>
+                      <div style={{ fontSize: '0.72rem', color: '#94a3b8' }}>Tenant Beneficiary</div>
+                      <code style={{ fontSize: '0.78rem', color: '#38bdf8' }}>{bond.tenant.slice(0, 18)}...</code>
+                    </div>
+                    <div>
+                      <div style={{ fontSize: '0.72rem', color: '#94a3b8' }}>Co-Signer / Guarantor</div>
+                      <code style={{ fontSize: '0.78rem', color: '#fbbf24' }}>{bond.guarantor.slice(0, 18)}...</code>
+                    </div>
+                    <div>
+                      <div style={{ fontSize: '0.72rem', color: '#94a3b8' }}>Surety Obligation</div>
+                      <span style={{ fontSize: '0.8rem', color: '#f8fafc', fontWeight: 600 }}>100% Default Coverage</span>
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', borderTop: '1px solid #1e293b', paddingTop: '12px' }}>
+                    {bond.status === 'Active' ? (
+                      <button
+                        onClick={() => handleReleaseGuarantor(bond.bondId)}
+                        disabled={isRelLoading}
+                        style={{
+                          background: '#10b981',
+                          color: '#000000',
+                          border: 'none',
+                          padding: '8px 16px',
+                          borderRadius: '6px',
+                          fontWeight: 700,
+                          fontSize: '0.82rem',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        {isRelLoading ? 'Releasing...' : 'Release Surety Stake (Clean Lease)'}
+                      </button>
+                    ) : (
+                      <span style={{ fontSize: '0.8rem', color: '#10b981', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <Check size={14} /> Surety Released Back to Guarantor
+                      </span>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </main>
     </div>
   );

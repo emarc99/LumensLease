@@ -87,6 +87,34 @@ export default function SorobanTelemetryModal() {
       tag: 'Micro-Rent Streaming & Default Buffer Vault',
       color: '#a855f7',
     },
+    {
+      name: 'Property Maintenance & Emergency SLA Vault',
+      id: STELLAR_CONFIG.contracts.propertyMaintenanceVault,
+      key: 'maintenance',
+      tag: '48h Emergency SLA & Direct Technician Payouts',
+      color: '#f97316',
+    },
+    {
+      name: 'Rental Guarantor & Surety Bond Vault',
+      id: STELLAR_CONFIG.contracts.rentalGuarantorVault,
+      key: 'guarantor',
+      tag: 'Co-Signer Surety Stakes Backing Leases',
+      color: '#06b6d4',
+    },
+    {
+      name: 'Community Scout Anti-Fraud Bounty Verifier',
+      id: STELLAR_CONFIG.contracts.communityScoutVerifier,
+      key: 'scout',
+      tag: 'Conlog Meter & Solar Inverter Physical Audits',
+      color: '#84cc16',
+    },
+    {
+      name: 'Multi-Tenant Shared Utility & Diesel Escrow',
+      id: STELLAR_CONFIG.contracts.utilityBillingEscrow,
+      key: 'utility',
+      tag: 'Automated Solar/Diesel Generator Pool & Receipts',
+      color: '#ec4899',
+    },
   ];
 
   return (

@@ -21,6 +21,10 @@ export const STELLAR_CONFIG = {
     disputeArbiter: 'CCA4NJKOADMF273XQ77FVBJEHPSOHKCQA36LUKTWBAEU6COZYHXWR3MP',
     tenancyDeedRegistry: 'CABCZ2EHEO62ONIVWILIBVR5AVNTBGOSXM6DI3FXKAGKEL5HSZMU2IVI',
     rentStreamVault: 'CAG43Q6I7OFHOTAKJG5RIHMXU6N3G5YSE5AXCFEMHGISGXEIC6OGDVN4',
+    propertyMaintenanceVault: 'CAHEZNOJ4ZKA5WFLIL6UL5KIMPXJ4LBXGR26LEB6FGNTQCGXJIM76SAH',
+    rentalGuarantorVault: 'CBF4YBDXUP3WWD2AG2XIE3MB5EL6QKUFIZTO4TJ4TYNEWXS4NH47J3MK',
+    communityScoutVerifier: 'CA7COEZNMG7UXNGH53SSV5GTNMUTHFEJU7AZQJYPUWOM5EEVMFLDKCFK',
+    utilityBillingEscrow: 'CA4JVBFM6QCHP4KJG6A5U2UUNAAIGDE4JIPZTNK66SKIAQZBSANWXQQI',
     nativeToken: 'CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC',
     adminDeployer: 'GCYOXL5QRSZGHEKMVQTGB4MMMTOQGZAJXS5BSREYIVH46LHCKFKOMD6G',
   },
@@ -1136,4 +1140,443 @@ export async function invokeClaimStreamInstallment(streamId: number, landlord: s
   saveStreamsList(streams);
   return mockTx;
 }
+
+/* ==========================================================================
+   CONTRACT 7: PROPERTY MAINTENANCE & EMERGENCY SLA REPAIR PROTOCOL
+   ========================================================================== */
+
+export interface MaintenanceRequestRecord {
+  requestId: number;
+  leaseId: number;
+  tenant: string;
+  technician: string;
+  category: 'SolarInverter' | 'BoreholePlumbing' | 'PrepaidMeter' | 'Structural';
+  costXlm: number;
+  description: string;
+  evidenceHash: string;
+  slaHours: number;
+  status: 'Pending' | 'Approved' | 'Completed' | 'AutoReleasedSLA' | 'Rejected';
+  createdAt: number;
+  txHash?: string;
+}
+
+const LOCAL_STORAGE_MAINTENANCE = 'lumenslease_maintenance_requests';
+
+export function getSavedMaintenanceRequests(): MaintenanceRequestRecord[] {
+  if (typeof window === 'undefined') return [];
+  try {
+    const data = localStorage.getItem(LOCAL_STORAGE_MAINTENANCE);
+    if (!data) {
+      const initial: MaintenanceRequestRecord[] = [
+        {
+          requestId: 101,
+          leaseId: 1,
+          tenant: 'GCYOXL5QRSZGHEKMVQTGB4MMMTOQGZAJXS5BSREYIVH46LHCKFKOMD6G',
+          technician: 'GB7B2K36M6WVTQYXX4D2OXZXU77F2R43W6475KCQ67LUKTWBAEU6COZY',
+          category: 'SolarInverter',
+          costXlm: 45,
+          description: 'Lithium battery charge controller tripped due to high line voltage surge',
+          evidenceHash: 'c4ca4238a0b923820dcc509a6f75849b28f80459c253b26c6d3ffb5f00e62057',
+          slaHours: 48,
+          status: 'Approved',
+          createdAt: Date.now() - 36 * 3600000,
+          txHash: 'e68a41bfbea2b0002dd9b92a87b6be08ead429a24389501f0e4869a884a50fe8',
+        },
+        {
+          requestId: 102,
+          leaseId: 2,
+          tenant: 'GAVH5N2K9B2KMJIVEGMYQXXR4ZTWAN5XTOHQQILXT34Q6OGDVN45B2KM',
+          technician: 'GCEZWKCA5VLDNRLN3RPRJMRZOX3Z6G5CHCGSNFHEYVXM3XOJMDS6AQ46',
+          category: 'BoreholePlumbing',
+          costXlm: 25,
+          description: 'Submersible borehole pressure switch leak requiring brass non-return valve replacement',
+          evidenceHash: '98d5c4b8b61e0f04e8d0e722bb2df6a096c01287f3b8f15d7e5272a74c43105e',
+          slaHours: 48,
+          status: 'AutoReleasedSLA',
+          createdAt: Date.now() - 52 * 3600000,
+          txHash: '7a2bf8e99bd9f0d18ffb8c2200fc7475383255f836aa88aca0bd7ff54cc17587c',
+        },
+      ];
+      localStorage.setItem(LOCAL_STORAGE_MAINTENANCE, JSON.stringify(initial));
+      return initial;
+    }
+    return JSON.parse(data);
+  } catch {
+    return [];
+  }
+}
+
+function saveMaintenanceList(list: MaintenanceRequestRecord[]) {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.setItem(LOCAL_STORAGE_MAINTENANCE, JSON.stringify(list));
+  } catch {}
+}
+
+export async function invokeRequestMaintenance(params: {
+  caller: string;
+  leaseId: number;
+  category: 'SolarInverter' | 'BoreholePlumbing' | 'PrepaidMeter' | 'Structural';
+  technician: string;
+  costXlm: number;
+  description: string;
+  evidenceHash: string;
+}): Promise<{ requestId: number; txHash: string }> {
+  await new Promise((r) => setTimeout(r, 1200));
+  const list = getSavedMaintenanceRequests();
+  const nextId = list.length > 0 ? Math.max(...list.map((m) => m.requestId)) + 1 : 101;
+  const mockTx = Array.from({ length: 64 }, () => Math.floor(Math.random() * 16).toString(16)).join('');
+
+  const newReq: MaintenanceRequestRecord = {
+    requestId: nextId,
+    leaseId: params.leaseId,
+    tenant: params.caller,
+    technician: params.technician,
+    category: params.category,
+    costXlm: params.costXlm,
+    description: params.description,
+    evidenceHash: params.evidenceHash,
+    slaHours: 48,
+    status: 'Pending',
+    createdAt: Date.now(),
+    txHash: mockTx,
+  };
+
+  list.push(newReq);
+  saveMaintenanceList(list);
+  return { requestId: nextId, txHash: mockTx };
+}
+
+export async function invokeApproveMaintenancePayout(requestId: number, caller: string): Promise<string> {
+  await new Promise((r) => setTimeout(r, 1200));
+  const list = getSavedMaintenanceRequests();
+  const idx = list.findIndex((m) => m.requestId === requestId);
+  if (idx === -1) throw new Error('Maintenance request not found');
+
+  list[idx].status = 'Completed';
+  const mockTx = Array.from({ length: 64 }, () => Math.floor(Math.random() * 16).toString(16)).join('');
+  list[idx].txHash = mockTx;
+  saveMaintenanceList(list);
+  return mockTx;
+}
+
+export async function invokeClaimSlaAutoRelease(requestId: number, caller: string): Promise<string> {
+  await new Promise((r) => setTimeout(r, 1500));
+  const list = getSavedMaintenanceRequests();
+  const idx = list.findIndex((m) => m.requestId === requestId);
+  if (idx === -1) throw new Error('Maintenance request not found');
+
+  list[idx].status = 'AutoReleasedSLA';
+  const mockTx = Array.from({ length: 64 }, () => Math.floor(Math.random() * 16).toString(16)).join('');
+  list[idx].txHash = mockTx;
+  saveMaintenanceList(list);
+  return mockTx;
+}
+
+/* ==========================================================================
+   CONTRACT 8: RENTAL GUARANTOR & SURETY BOND VAULT PROTOCOL
+   ========================================================================== */
+
+export interface GuarantorBondRecord {
+  bondId: number;
+  leaseId: number;
+  guarantor: string;
+  tenant: string;
+  stakedAmountXlm: number;
+  requiredStakeXlm: number;
+  status: 'Active' | 'Liquidated' | 'Released';
+  createdAt: number;
+  txHash?: string;
+}
+
+const LOCAL_STORAGE_GUARANTOR = 'lumenslease_guarantor_bonds';
+
+export function getSavedGuarantorBonds(): GuarantorBondRecord[] {
+  if (typeof window === 'undefined') return [];
+  try {
+    const data = localStorage.getItem(LOCAL_STORAGE_GUARANTOR);
+    if (!data) {
+      const initial: GuarantorBondRecord[] = [
+        {
+          bondId: 201,
+          leaseId: 1,
+          guarantor: 'GB7B2K36M6WVTQYXX4D2OXZXU77F2R43W6475KCQ67LUKTWBAEU6COZY',
+          tenant: 'GCYOXL5QRSZGHEKMVQTGB4MMMTOQGZAJXS5BSREYIVH46LHCKFKOMD6G',
+          stakedAmountXlm: 100,
+          requiredStakeXlm: 100,
+          status: 'Active',
+          createdAt: Date.now() - 40 * 86400000,
+          txHash: '9ab8cee85b0e4bfa4f508494aea3b9118ad881bee88276df12981e888873ce11',
+        },
+      ];
+      localStorage.setItem(LOCAL_STORAGE_GUARANTOR, JSON.stringify(initial));
+      return initial;
+    }
+    return JSON.parse(data);
+  } catch {
+    return [];
+  }
+}
+
+function saveGuarantorList(list: GuarantorBondRecord[]) {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.setItem(LOCAL_STORAGE_GUARANTOR, JSON.stringify(list));
+  } catch {}
+}
+
+export async function invokeStakeGuarantorBond(params: {
+  leaseId: number;
+  tenant: string;
+  guarantor: string;
+  stakedAmountXlm: number;
+}): Promise<{ bondId: number; txHash: string }> {
+  await new Promise((r) => setTimeout(r, 1200));
+  const list = getSavedGuarantorBonds();
+  const nextId = list.length > 0 ? Math.max(...list.map((b) => b.bondId)) + 1 : 201;
+  const mockTx = Array.from({ length: 64 }, () => Math.floor(Math.random() * 16).toString(16)).join('');
+
+  const newBond: GuarantorBondRecord = {
+    bondId: nextId,
+    leaseId: params.leaseId,
+    guarantor: params.guarantor,
+    tenant: params.tenant,
+    stakedAmountXlm: params.stakedAmountXlm,
+    requiredStakeXlm: params.stakedAmountXlm,
+    status: 'Active',
+    createdAt: Date.now(),
+    txHash: mockTx,
+  };
+
+  list.push(newBond);
+  saveGuarantorList(list);
+  return { bondId: nextId, txHash: mockTx };
+}
+
+export async function invokeLiquidateGuarantorBond(bondId: number, caller: string, amountXlm: number): Promise<string> {
+  await new Promise((r) => setTimeout(r, 1500));
+  const list = getSavedGuarantorBonds();
+  const idx = list.findIndex((b) => b.bondId === bondId);
+  if (idx === -1) throw new Error('Guarantor bond not found');
+
+  list[idx].status = 'Liquidated';
+  const mockTx = Array.from({ length: 64 }, () => Math.floor(Math.random() * 16).toString(16)).join('');
+  list[idx].txHash = mockTx;
+  saveGuarantorList(list);
+  return mockTx;
+}
+
+export async function invokeReleaseGuarantorBond(bondId: number, caller: string): Promise<string> {
+  await new Promise((r) => setTimeout(r, 1200));
+  const list = getSavedGuarantorBonds();
+  const idx = list.findIndex((b) => b.bondId === bondId);
+  if (idx === -1) throw new Error('Guarantor bond not found');
+
+  list[idx].status = 'Released';
+  const mockTx = Array.from({ length: 64 }, () => Math.floor(Math.random() * 16).toString(16)).join('');
+  list[idx].txHash = mockTx;
+  saveGuarantorList(list);
+  return mockTx;
+}
+
+/* ==========================================================================
+   CONTRACT 9: COMMUNITY SCOUT ANTI-FRAUD PROPERTY AUDIT BOUNTY
+   ========================================================================== */
+
+export interface ScoutAuditRecord {
+  bountyId: number;
+  propertyId: string;
+  scout: string;
+  meterSerial: string;
+  solarCapacityKva: number;
+  waterSourceVerified: boolean;
+  gpsHash: string;
+  bountyRewardXlm: number;
+  status: 'Verified' | 'Challenged' | 'Slashed';
+  verifiedAt: number;
+  txHash?: string;
+}
+
+const LOCAL_STORAGE_SCOUT = 'lumenslease_scout_audits';
+
+export function getSavedScoutAudits(): ScoutAuditRecord[] {
+  if (typeof window === 'undefined') return [];
+  try {
+    const data = localStorage.getItem(LOCAL_STORAGE_SCOUT);
+    if (!data) {
+      const initial: ScoutAuditRecord[] = [
+        {
+          bountyId: 301,
+          propertyId: 'prop-lagos-01',
+          scout: 'GCYOXL5QRSZGHEKMVQTGB4MMMTOQGZAJXS5BSREYIVH46LHCKFKOMD6G',
+          meterSerial: 'CONLOG-041928471-LAGOS',
+          solarCapacityKva: 5,
+          waterSourceVerified: true,
+          gpsHash: '6.4698N-3.5852E-LEKKI1-LAGOS-VERIFIED',
+          bountyRewardXlm: 20,
+          status: 'Verified',
+          verifiedAt: Date.now() - 14 * 86400000,
+          txHash: '574a2ac471d948549a36fa01198903e2ec524cf340c824fce75f86cd86563093',
+        },
+        {
+          bountyId: 302,
+          propertyId: 'prop-abuja-02',
+          scout: 'GB7B2K36M6WVTQYXX4D2OXZXU77F2R43W6475KCQ67LUKTWBAEU6COZY',
+          meterSerial: 'MOJEC-02837491-MAITAMA',
+          solarCapacityKva: 10,
+          waterSourceVerified: true,
+          gpsHash: '9.0765N-7.3986E-MAITAMA-ABUJA-VERIFIED',
+          bountyRewardXlm: 30,
+          status: 'Verified',
+          verifiedAt: Date.now() - 7 * 86400000,
+          txHash: 'edb35f036529879b457fb6fbda98ee7f40ede427546c92a682e0e421be920706',
+        },
+      ];
+      localStorage.setItem(LOCAL_STORAGE_SCOUT, JSON.stringify(initial));
+      return initial;
+    }
+    return JSON.parse(data);
+  } catch {
+    return [];
+  }
+}
+
+function saveScoutList(list: ScoutAuditRecord[]) {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.setItem(LOCAL_STORAGE_SCOUT, JSON.stringify(list));
+  } catch {}
+}
+
+export async function invokeSubmitScoutAudit(params: {
+  scout: string;
+  propertyId: string;
+  meterSerial: string;
+  solarCapacityKva: number;
+  waterSourceVerified: boolean;
+  gpsHash: string;
+}): Promise<{ bountyId: number; txHash: string }> {
+  await new Promise((r) => setTimeout(r, 1400));
+  const list = getSavedScoutAudits();
+  const nextId = list.length > 0 ? Math.max(...list.map((s) => s.bountyId)) + 1 : 301;
+  const mockTx = Array.from({ length: 64 }, () => Math.floor(Math.random() * 16).toString(16)).join('');
+
+  const newAudit: ScoutAuditRecord = {
+    bountyId: nextId,
+    propertyId: params.propertyId,
+    scout: params.scout,
+    meterSerial: params.meterSerial,
+    solarCapacityKva: params.solarCapacityKva,
+    waterSourceVerified: params.waterSourceVerified,
+    gpsHash: params.gpsHash,
+    bountyRewardXlm: 25,
+    status: 'Verified',
+    verifiedAt: Date.now(),
+    txHash: mockTx,
+  };
+
+  list.push(newAudit);
+  saveScoutList(list);
+  return { bountyId: nextId, txHash: mockTx };
+}
+
+/* ==========================================================================
+   CONTRACT 10: MULTI-TENANT SHARED UTILITY & DIESEL POOL ESCROW
+   ========================================================================== */
+
+export interface UtilityPoolRecord {
+  poolId: number;
+  propertyId: string;
+  manager: string;
+  dieselReserveXlm: number;
+  gridPowerUnits: number;
+  totalTenants: number;
+  activeTenants: string[];
+  status: 'Active' | 'Rebalancing';
+  txHash?: string;
+}
+
+const LOCAL_STORAGE_UTILITY = 'lumenslease_utility_pools';
+
+export function getSavedUtilityPools(): UtilityPoolRecord[] {
+  if (typeof window === 'undefined') return [];
+  try {
+    const data = localStorage.getItem(LOCAL_STORAGE_UTILITY);
+    if (!data) {
+      const initial: UtilityPoolRecord[] = [
+        {
+          poolId: 401,
+          propertyId: 'prop-lagos-01',
+          manager: 'GCEZWKCA5VLDNRLN3RPRJMRZOX3Z6G5CHCGSNFHEYVXM3XOJMDS6AQ46',
+          dieselReserveXlm: 240,
+          gridPowerUnits: 1450,
+          totalTenants: 4,
+          activeTenants: [
+            'GCYOXL5QRSZGHEKMVQTGB4MMMTOQGZAJXS5BSREYIVH46LHCKFKOMD6G',
+            'GB7B2K36M6WVTQYXX4D2OXZXU77F2R43W6475KCQ67LUKTWBAEU6COZY',
+          ],
+          status: 'Active',
+          txHash: '559bed0a91ecee76f35f492a5e4a3da4588d0c83852fcb9b1e42753ec5982b41',
+        },
+      ];
+      localStorage.setItem(LOCAL_STORAGE_UTILITY, JSON.stringify(initial));
+      return initial;
+    }
+    return JSON.parse(data);
+  } catch {
+    return [];
+  }
+}
+
+function saveUtilityList(list: UtilityPoolRecord[]) {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.setItem(LOCAL_STORAGE_UTILITY, JSON.stringify(list));
+  } catch {}
+}
+
+export async function invokeDepositUtilityReserve(
+  poolId: number,
+  caller: string,
+  amountXlm: number
+): Promise<string> {
+  await new Promise((r) => setTimeout(r, 1200));
+  const list = getSavedUtilityPools();
+  const idx = list.findIndex((u) => u.poolId === poolId);
+  if (idx === -1) throw new Error('Utility pool not found');
+
+  list[idx].dieselReserveXlm += amountXlm;
+  if (!list[idx].activeTenants.includes(caller)) {
+    list[idx].activeTenants.push(caller);
+    list[idx].totalTenants = list[idx].activeTenants.length;
+  }
+  const mockTx = Array.from({ length: 64 }, () => Math.floor(Math.random() * 16).toString(16)).join('');
+  list[idx].txHash = mockTx;
+  saveUtilityList(list);
+  return mockTx;
+}
+
+export async function invokeDisburseUtilityExpense(
+  poolId: number,
+  manager: string,
+  amountXlm: number,
+  vendor: string,
+  receiptHash: string
+): Promise<string> {
+  await new Promise((r) => setTimeout(r, 1400));
+  const list = getSavedUtilityPools();
+  const idx = list.findIndex((u) => u.poolId === poolId);
+  if (idx === -1) throw new Error('Utility pool not found');
+
+  if (list[idx].dieselReserveXlm < amountXlm) {
+    throw new Error('Insufficient utility pool balance');
+  }
+
+  list[idx].dieselReserveXlm -= amountXlm;
+  const mockTx = Array.from({ length: 64 }, () => Math.floor(Math.random() * 16).toString(16)).join('');
+  list[idx].txHash = mockTx;
+  saveUtilityList(list);
+  return mockTx;
+}
+
 

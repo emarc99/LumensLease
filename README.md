@@ -7,18 +7,19 @@
 [![Stellar](https://img.shields.io/badge/Network-Stellar%20Testnet-08B5E5?logo=stellar)](https://stellar.org)
 [![Soroban](https://img.shields.io/badge/Smart%20Contracts-Soroban%20Rust-black?logo=rust)](https://soroban.stellar.org)
 [![Settlement](https://img.shields.io/badge/Settlement-Stellar%20USDC%20%7C%20cNGN-2775CA)](https://stellar.org)
-[![Live Frontend](https://img.shields.io/badge/Live%20App-CloudFront%20LOS50%20Edge-orange)](https://d1dco6ew3il05x.cloudfront.net)
-[![Middleman Fees](https://img.shields.io/badge/Agent%20Markups-0%25-brightgreen)](https://d1dco6ew3il05x.cloudfront.net/calculator/)
+[![Live Frontend](https://img.shields.io/badge/Live%20App-CloudFront%20Edge-orange)](https://d3oldfajqt8tgt.cloudfront.net)
+[![Middleman Fees](https://img.shields.io/badge/Agent%20Markups-0%25-brightgreen)](https://d3oldfajqt8tgt.cloudfront.net/calculator/)
 
 ---
 
 ## 🔗 Live Deployments & Endpoints
 
-* **Global Web Application**: [https://d1dco6ew3il05x.cloudfront.net](https://d1dco6ew3il05x.cloudfront.net)
+* **Global Web Application**: [https://d3oldfajqt8tgt.cloudfront.net](https://d3oldfajqt8tgt.cloudfront.net)  
+  *(Alternative S3 Mirror: [http://lumenslease-stellar-226579698869.s3-website-us-east-1.amazonaws.com](http://lumenslease-stellar-226579698869.s3-website-us-east-1.amazonaws.com))*
 * **Deployed Soroban Contract (Stellar Testnet)**: [`CBK6CZCHOUNZOPBYZCIVFUVUAVBGIBLUOY3KPB4RQL6ISMQQKJYZYYZE`](https://stellar.expert/explorer/testnet/contract/CBK6CZCHOUNZOPBYZCIVFUVUAVBGIBLUOY3KPB4RQL6ISMQQKJYZYYZE)
 * **Contract Deploy Transaction**: [View on Stellar Expert](https://stellar.expert/explorer/testnet/tx/21d6fa783d747820b26e9924c0d3586ddd9ee88b069766d1627255bd99896528)
-* **Landlord Voice Studio**: [https://d1dco6ew3il05x.cloudfront.net/studio/](https://d1dco6ew3il05x.cloudfront.net/studio/)
-* **Middleman Savings Calculator**: [https://d1dco6ew3il05x.cloudfront.net/calculator/](https://d1dco6ew3il05x.cloudfront.net/calculator/)
+* **Landlord Voice Studio**: [https://d3oldfajqt8tgt.cloudfront.net/studio/](https://d3oldfajqt8tgt.cloudfront.net/studio/)
+* **Middleman Savings Calculator**: [https://d3oldfajqt8tgt.cloudfront.net/calculator/](https://d3oldfajqt8tgt.cloudfront.net/calculator/)
 * **Soroban Contract Suite**: [`contracts/soroban_rental_escrow/`](./contracts/soroban_rental_escrow/)
 
 ---

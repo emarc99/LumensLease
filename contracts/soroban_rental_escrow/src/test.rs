@@ -2,7 +2,7 @@
 
 use super::*;
 use soroban_sdk::{
-    testutils::Address as _,
+    testutils::{Address as _, Ledger},
     token::{Client as TokenClient, StellarAssetClient},
     Address, BytesN, Env, String,
 };
@@ -140,6 +140,107 @@ fn test_full_happy_path_lease_lifecycle() {
     assert!(lease.deposit_released);
     assert_eq!(token_client.balance(&tenant), caution); // Tenant gets full caution back!
     assert_eq!(token_client.balance(&client.address), 0);
+}
+
+#[test]
+fn test_damage_deduction_flow() {
+    let (env, client, _admin, landlord, tenant, token_client, token_admin_client) = setup_test();
+
+    let rent = 1_000_000_0000000i128;
+    let caution = 200_000_0000000i128;
+    let total = rent + caution;
+
+    token_admin_client.mint(&tenant, &total);
+
+    let hash = BytesN::from_array(&env, &[3u8; 32]);
+    let lease_id = client.create_lease(&tenant, &landlord, &rent, &caution, &365, &hash);
+
+    client.fund_lease(&lease_id, &tenant);
+    client.disburse_rent(&lease_id, &landlord);
+
+    // Landlord proposes $50 damage deduction for repaint with photo hash
+    let damage_amount = 50_000_0000000i128;
+    let evidence_hash = BytesN::from_array(&env, &[4u8; 32]);
+    client.propose_damage_deduction(&lease_id, &landlord, &damage_amount, &evidence_hash);
+
+    let lease = client.get_lease(&lease_id);
+    assert_eq!(lease.status, EscrowStatus::DamageProposed);
+    assert_eq!(lease.proposed_damage_amount, damage_amount);
+
+    // Tenant accepts: landlord gets $50, tenant gets remaining $150
+    client.accept_damage_deduction(&lease_id, &tenant);
+
+    let finished_lease = client.get_lease(&lease_id);
+    assert_eq!(finished_lease.status, EscrowStatus::Completed);
+    assert_eq!(token_client.balance(&landlord), rent + damage_amount);
+    assert_eq!(token_client.balance(&tenant), caution - damage_amount);
+    assert_eq!(token_client.balance(&client.address), 0);
+}
+
+#[test]
+fn test_damage_deduction_rejection_leads_to_dispute() {
+    let (env, client, _admin, landlord, tenant, _tc, token_admin_client) = setup_test();
+
+    let rent = 1_000_000_0000000i128;
+    let caution = 100_000_0000000i128;
+    token_admin_client.mint(&tenant, &(rent + caution));
+
+    let hash = BytesN::from_array(&env, &[5u8; 32]);
+    let lease_id = client.create_lease(&tenant, &landlord, &rent, &caution, &365, &hash);
+
+    client.fund_lease(&lease_id, &tenant);
+    client.disburse_rent(&lease_id, &tenant);
+
+    let damage_amount = 80_000_0000000i128;
+    let evidence_hash = BytesN::from_array(&env, &[6u8; 32]);
+    client.propose_damage_deduction(&lease_id, &landlord, &damage_amount, &evidence_hash);
+
+    // Tenant rejects
+    client.reject_damage_deduction(&lease_id, &tenant);
+
+    let lease = client.get_lease(&lease_id);
+    assert_eq!(lease.status, EscrowStatus::Disputed);
+}
+
+#[test]
+fn test_claim_deposit_timeout() {
+    let (env, client, _admin, landlord, tenant, token_client, token_admin_client) = setup_test();
+
+    let rent = 1_000_000_0000000i128;
+    let caution = 100_000_0000000i128;
+    token_admin_client.mint(&tenant, &(rent + caution));
+
+    let hash = BytesN::from_array(&env, &[7u8; 32]);
+    let lease_duration = 30u64; // 30 days
+    let lease_id = client.create_lease(&tenant, &landlord, &rent, &caution, &lease_duration, &hash);
+
+    client.fund_lease(&lease_id, &tenant);
+    client.disburse_rent(&lease_id, &landlord);
+
+    // Fast-forward ledger timestamp beyond duration + 7 days
+    let now = env.ledger().timestamp();
+    let future_time = now + (37 * 86_400) + 10;
+    env.ledger().set_timestamp(future_time);
+
+    // Tenant claims deposit due to landlord inactivity
+    client.claim_deposit_timeout(&lease_id, &tenant);
+
+    let lease = client.get_lease(&lease_id);
+    assert_eq!(lease.status, EscrowStatus::Completed);
+    assert_eq!(token_client.balance(&tenant), caution);
+}
+
+#[test]
+fn test_cancel_unfunded_lease() {
+    let (env, client, _admin, landlord, tenant, _tc, _tac) = setup_test();
+
+    let hash = BytesN::from_array(&env, &[8u8; 32]);
+    let lease_id = client.create_lease(&tenant, &landlord, &100_000, &10_000, &365, &hash);
+
+    client.cancel_unfunded_lease(&lease_id, &tenant);
+
+    let lease = client.get_lease(&lease_id);
+    assert_eq!(lease.status, EscrowStatus::Cancelled);
 }
 
 #[test]

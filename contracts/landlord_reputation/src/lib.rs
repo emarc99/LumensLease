@@ -1,7 +1,7 @@
 #![no_std]
 use soroban_sdk::{
     contract, contracterror, contractimpl, contracttype, symbol_short, Address, BytesN, Env,
-    String,
+    String, Vec,
 };
 
 #[cfg(test)]
@@ -19,6 +19,7 @@ pub enum ReputationError {
     Unauthorized = 3,
     LandlordNotFound = 4,
     PropertyNotFound = 5,
+    InvalidRating = 6,
 }
 
 #[contracttype]
@@ -47,10 +48,20 @@ pub struct PropertyAuditProof {
 }
 
 #[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct TenantReview {
+    pub tenant: Address,
+    pub rating: u32, // 1 to 5 stars
+    pub review_hash: BytesN<32>,
+    pub timestamp: u64,
+}
+
+#[contracttype]
 pub enum DataKey {
     Admin,
     Landlord(Address),
     PropertyAudit(String),
+    Reviews(Address),
     TotalLandlords,
 }
 
@@ -174,6 +185,67 @@ impl LandlordReputationContract {
         Ok(())
     }
 
+    /// Submit an on-chain rating (1-5 stars) and review hash for a landlord
+    pub fn submit_tenant_review(
+        env: Env,
+        tenant: Address,
+        landlord: Address,
+        rating: u32,
+        review_hash: BytesN<32>,
+    ) -> Result<(), ReputationError> {
+        tenant.require_auth();
+
+        if rating < 1 || rating > 5 {
+            return Err(ReputationError::InvalidRating);
+        }
+
+        let mut profile: LandlordProfile = env
+            .storage()
+            .persistent()
+            .get(&DataKey::Landlord(landlord.clone()))
+            .ok_or(ReputationError::LandlordNotFound)?;
+
+        // Adjust trust score according to rating
+        if rating >= 4 && profile.trust_score < 98 {
+            profile.trust_score += 2;
+        } else if rating <= 2 && profile.trust_score > 25 {
+            profile.trust_score -= 5;
+        }
+
+        env.storage()
+            .persistent()
+            .set(&DataKey::Landlord(landlord.clone()), &profile);
+
+        let mut reviews: Vec<TenantReview> = env
+            .storage()
+            .persistent()
+            .get(&DataKey::Reviews(landlord.clone()))
+            .unwrap_or(Vec::new(&env));
+
+        reviews.push_back(TenantReview {
+            tenant: tenant.clone(),
+            rating,
+            review_hash: review_hash.clone(),
+            timestamp: env.ledger().timestamp(),
+        });
+
+        env.storage()
+            .persistent()
+            .set(&DataKey::Reviews(landlord.clone()), &reviews);
+        env.storage().persistent().extend_ttl(
+            &DataKey::Reviews(landlord.clone()),
+            INSTANCE_LIFETIME_THRESHOLD,
+            INSTANCE_BUMP_AMOUNT,
+        );
+
+        env.events().publish(
+            (symbol_short!("rep"), symbol_short!("review")),
+            (landlord, tenant, rating),
+        );
+
+        Ok(())
+    }
+
     /// Record lease outcome and automatically update landlord trust score (0-100)
     pub fn record_lease_outcome(
         env: Env,
@@ -232,6 +304,14 @@ impl LandlordReputationContract {
             .persistent()
             .get(&DataKey::Landlord(landlord))
             .ok_or(ReputationError::LandlordNotFound)
+    }
+
+    /// Read landlord reviews list
+    pub fn get_landlord_reviews(env: Env, landlord: Address) -> Vec<TenantReview> {
+        env.storage()
+            .persistent()
+            .get(&DataKey::Reviews(landlord))
+            .unwrap_or(Vec::new(&env))
     }
 
     /// Read recorded property inspection audit

@@ -10,6 +10,8 @@ mod test;
 // Storage TTL thresholds (~5 seconds per ledger on Stellar)
 const INSTANCE_BUMP_AMOUNT: u32 = 518_400; // ~30 days
 const INSTANCE_LIFETIME_THRESHOLD: u32 = 120_960; // ~7 days
+const SECONDS_PER_DAY: u64 = 86_400;
+const TIMEOUT_GRACE_PERIOD_DAYS: u64 = 7;
 
 #[contracterror]
 #[derive(Copy, Clone, Debug, Eq, PartialEq, PartialOrd, Ord)]
@@ -22,6 +24,7 @@ pub enum Error {
     InvalidAmount = 5,
     InvalidState = 6,
     DisputeAlreadyRaised = 7,
+    TimeoutNotReached = 8,
 }
 
 #[contracttype]
@@ -34,6 +37,8 @@ pub enum EscrowStatus {
     Completed = 3,
     Disputed = 4,
     Refunded = 5,
+    DamageProposed = 6,
+    Cancelled = 7,
 }
 
 #[contracttype]
@@ -50,6 +55,8 @@ pub struct LeaseAgreement {
     pub funded_at: u64,
     pub rent_disbursed: bool,
     pub deposit_released: bool,
+    pub proposed_damage_amount: i128,
+    pub damage_evidence_hash: BytesN<32>,
 }
 
 #[contracttype]
@@ -110,6 +117,8 @@ impl RentalEscrowContract {
             .unwrap_or(0);
         counter += 1;
 
+        let empty_hash = BytesN::from_array(&env, &[0u8; 32]);
+
         let lease = LeaseAgreement {
             lease_id: counter,
             tenant: tenant.clone(),
@@ -122,6 +131,8 @@ impl RentalEscrowContract {
             funded_at: 0,
             rent_disbursed: false,
             deposit_released: false,
+            proposed_damage_amount: 0,
+            damage_evidence_hash: empty_hash,
         };
 
         env.storage().persistent().set(&DataKey::Lease(counter), &lease);
@@ -285,6 +296,228 @@ impl RentalEscrowContract {
         Ok(())
     }
 
+    /// Landlord proposes a partial damage deduction with photographic visual hash proof
+    pub fn propose_damage_deduction(
+        env: Env,
+        lease_id: u64,
+        caller: Address,
+        deduction_amount: i128,
+        evidence_hash: BytesN<32>,
+    ) -> Result<(), Error> {
+        caller.require_auth();
+
+        let mut lease: LeaseAgreement = env
+            .storage()
+            .persistent()
+            .get(&DataKey::Lease(lease_id))
+            .ok_or(Error::LeaseNotFound)?;
+
+        if lease.status != EscrowStatus::Active {
+            return Err(Error::InvalidState);
+        }
+
+        if caller != lease.landlord {
+            return Err(Error::Unauthorized);
+        }
+
+        if deduction_amount <= 0 || deduction_amount > lease.caution_deposit {
+            return Err(Error::InvalidAmount);
+        }
+
+        lease.proposed_damage_amount = deduction_amount;
+        lease.damage_evidence_hash = evidence_hash.clone();
+        lease.status = EscrowStatus::DamageProposed;
+
+        env.storage().persistent().set(&DataKey::Lease(lease_id), &lease);
+        env.storage().persistent().extend_ttl(
+            &DataKey::Lease(lease_id),
+            INSTANCE_LIFETIME_THRESHOLD,
+            INSTANCE_BUMP_AMOUNT,
+        );
+
+        env.events().publish(
+            (symbol_short!("lease"), symbol_short!("dmg_prop")),
+            (lease_id, deduction_amount, evidence_hash),
+        );
+
+        Ok(())
+    }
+
+    /// Tenant accepts the landlord's damage deduction; landlord gets damage funds, tenant gets balance
+    pub fn accept_damage_deduction(env: Env, lease_id: u64, caller: Address) -> Result<(), Error> {
+        caller.require_auth();
+
+        let mut lease: LeaseAgreement = env
+            .storage()
+            .persistent()
+            .get(&DataKey::Lease(lease_id))
+            .ok_or(Error::LeaseNotFound)?;
+
+        if lease.status != EscrowStatus::DamageProposed {
+            return Err(Error::InvalidState);
+        }
+
+        if caller != lease.tenant {
+            return Err(Error::Unauthorized);
+        }
+
+        let token_addr: Address = env
+            .storage()
+            .instance()
+            .get(&DataKey::PaymentToken)
+            .ok_or(Error::NotInitialized)?;
+
+        let token_client = token::Client::new(&env, &token_addr);
+
+        let damage = lease.proposed_damage_amount;
+        let tenant_refund = lease.caution_deposit - damage;
+
+        if damage > 0 {
+            token_client.transfer(&env.current_contract_address(), &lease.landlord, &damage);
+        }
+        if tenant_refund > 0 {
+            token_client.transfer(&env.current_contract_address(), &lease.tenant, &tenant_refund);
+        }
+
+        lease.deposit_released = true;
+        lease.status = EscrowStatus::Completed;
+
+        env.storage().persistent().set(&DataKey::Lease(lease_id), &lease);
+        env.storage().persistent().extend_ttl(
+            &DataKey::Lease(lease_id),
+            INSTANCE_LIFETIME_THRESHOLD,
+            INSTANCE_BUMP_AMOUNT,
+        );
+
+        env.events().publish(
+            (symbol_short!("lease"), symbol_short!("dmg_acc")),
+            (lease_id, damage, tenant_refund),
+        );
+
+        Ok(())
+    }
+
+    /// Tenant rejects damage claim; escalates to Disputed status for community/admin arbitration
+    pub fn reject_damage_deduction(env: Env, lease_id: u64, caller: Address) -> Result<(), Error> {
+        caller.require_auth();
+
+        let mut lease: LeaseAgreement = env
+            .storage()
+            .persistent()
+            .get(&DataKey::Lease(lease_id))
+            .ok_or(Error::LeaseNotFound)?;
+
+        if lease.status != EscrowStatus::DamageProposed {
+            return Err(Error::InvalidState);
+        }
+
+        if caller != lease.tenant {
+            return Err(Error::Unauthorized);
+        }
+
+        lease.status = EscrowStatus::Disputed;
+        env.storage().persistent().set(&DataKey::Lease(lease_id), &lease);
+        env.storage().persistent().extend_ttl(
+            &DataKey::Lease(lease_id),
+            INSTANCE_LIFETIME_THRESHOLD,
+            INSTANCE_BUMP_AMOUNT,
+        );
+
+        env.events().publish(
+            (symbol_short!("lease"), symbol_short!("dmg_rej")),
+            lease_id,
+        );
+
+        Ok(())
+    }
+
+    /// If lease duration + 7 days grace expires without dispute or refund, tenant claims caution refund directly
+    pub fn claim_deposit_timeout(env: Env, lease_id: u64, caller: Address) -> Result<(), Error> {
+        caller.require_auth();
+
+        let mut lease: LeaseAgreement = env
+            .storage()
+            .persistent()
+            .get(&DataKey::Lease(lease_id))
+            .ok_or(Error::LeaseNotFound)?;
+
+        if lease.status != EscrowStatus::Active {
+            return Err(Error::InvalidState);
+        }
+
+        if caller != lease.tenant {
+            return Err(Error::Unauthorized);
+        }
+
+        let required_time = lease.funded_at
+            + (lease.lease_duration_days * SECONDS_PER_DAY)
+            + (TIMEOUT_GRACE_PERIOD_DAYS * SECONDS_PER_DAY);
+
+        if env.ledger().timestamp() < required_time {
+            return Err(Error::TimeoutNotReached);
+        }
+
+        let token_addr: Address = env
+            .storage()
+            .instance()
+            .get(&DataKey::PaymentToken)
+            .ok_or(Error::NotInitialized)?;
+
+        let token_client = token::Client::new(&env, &token_addr);
+        token_client.transfer(&env.current_contract_address(), &lease.tenant, &lease.caution_deposit);
+
+        lease.deposit_released = true;
+        lease.status = EscrowStatus::Completed;
+
+        env.storage().persistent().set(&DataKey::Lease(lease_id), &lease);
+        env.storage().persistent().extend_ttl(
+            &DataKey::Lease(lease_id),
+            INSTANCE_LIFETIME_THRESHOLD,
+            INSTANCE_BUMP_AMOUNT,
+        );
+
+        env.events().publish(
+            (symbol_short!("lease"), symbol_short!("timeout")),
+            (lease_id, lease.tenant, lease.caution_deposit),
+        );
+
+        Ok(())
+    }
+
+    /// Cancel an unfunded lease
+    pub fn cancel_unfunded_lease(env: Env, lease_id: u64, caller: Address) -> Result<(), Error> {
+        caller.require_auth();
+
+        let mut lease: LeaseAgreement = env
+            .storage()
+            .persistent()
+            .get(&DataKey::Lease(lease_id))
+            .ok_or(Error::LeaseNotFound)?;
+
+        if lease.status != EscrowStatus::Created {
+            return Err(Error::InvalidState);
+        }
+
+        if caller != lease.tenant && caller != lease.landlord {
+            return Err(Error::Unauthorized);
+        }
+
+        lease.status = EscrowStatus::Cancelled;
+        env.storage().persistent().set(&DataKey::Lease(lease_id), &lease);
+        env.storage().persistent().extend_ttl(
+            &DataKey::Lease(lease_id),
+            INSTANCE_LIFETIME_THRESHOLD,
+            INSTANCE_BUMP_AMOUNT,
+        );
+
+        env.events().publish(
+            (symbol_short!("lease"), symbol_short!("cancel")),
+            (lease_id, caller),
+        );
+
+        Ok(())
+    }
+
     /// Raise a formal dispute if property damage is alleged upon tenancy conclusion
     pub fn raise_dispute(
         env: Env,
@@ -300,7 +533,7 @@ impl RentalEscrowContract {
             .get(&DataKey::Lease(lease_id))
             .ok_or(Error::LeaseNotFound)?;
 
-        if lease.status != EscrowStatus::Active {
+        if lease.status != EscrowStatus::Active && lease.status != EscrowStatus::DamageProposed {
             return Err(Error::InvalidState);
         }
 

@@ -16,11 +16,26 @@
 
 * **Global Web Application**: [https://d3oldfajqt8tgt.cloudfront.net](https://d3oldfajqt8tgt.cloudfront.net)  
   *(Alternative S3 Mirror: [http://lumenslease-stellar-226579698869.s3-website-us-east-1.amazonaws.com](http://lumenslease-stellar-226579698869.s3-website-us-east-1.amazonaws.com))*
-* **Deployed Soroban Contract (Stellar Testnet)**: [`CBK6CZCHOUNZOPBYZCIVFUVUAVBGIBLUOY3KPB4RQL6ISMQQKJYZYYZE`](https://stellar.expert/explorer/testnet/contract/CBK6CZCHOUNZOPBYZCIVFUVUAVBGIBLUOY3KPB4RQL6ISMQQKJYZYYZE)
-* **Contract Deploy Transaction**: [View on Stellar Expert](https://stellar.expert/explorer/testnet/tx/21d6fa783d747820b26e9924c0d3586ddd9ee88b069766d1627255bd99896528)
 * **Landlord Voice Studio**: [https://d3oldfajqt8tgt.cloudfront.net/studio/](https://d3oldfajqt8tgt.cloudfront.net/studio/)
+* **Rental Escrow Protocol Console**: [https://d3oldfajqt8tgt.cloudfront.net/escrow/](https://d3oldfajqt8tgt.cloudfront.net/escrow/)
+* **Tenant Credit Passport**: [https://d3oldfajqt8tgt.cloudfront.net/passport/](https://d3oldfajqt8tgt.cloudfront.net/passport/)
+* **Dispute Arbitration Jury Room**: [https://d3oldfajqt8tgt.cloudfront.net/arbitration/](https://d3oldfajqt8tgt.cloudfront.net/arbitration/)
 * **Middleman Savings Calculator**: [https://d3oldfajqt8tgt.cloudfront.net/calculator/](https://d3oldfajqt8tgt.cloudfront.net/calculator/)
-* **Soroban Contract Suite**: [`contracts/soroban_rental_escrow/`](./contracts/soroban_rental_escrow/)
+
+### 📜 Deployed 10-Contract Soroban Suite on Stellar Testnet
+
+| # | Smart Contract | Testnet Contract ID | Explorer Link | Core Role in LumensLease |
+| :- | :--- | :--- | :--- | :--- |
+| **01** | `soroban_rental_escrow` | [`CBW7X3JMND3R3JBVUUIPREXW3L2QAB2OISCSE4XHNFKUNVTOBKD6JETN`](https://stellar.expert/explorer/testnet/contract/CBW7X3JMND3R3JBVUUIPREXW3L2QAB2OISCSE4XHNFKUNVTOBKD6JETN) | [Stellar Expert](https://stellar.expert/explorer/testnet/contract/CBW7X3JMND3R3JBVUUIPREXW3L2QAB2OISCSE4XHNFKUNVTOBKD6JETN) | Non-custodial caution deposit locks, lease funding & statutory releases |
+| **02** | `landlord_reputation` | [`CAETU7N2Y62QYKAAM22Z54RDGMJKQTVKYIX6MHXMAEUYC2FWD5SDXPKE`](https://stellar.expert/explorer/testnet/contract/CAETU7N2Y62QYKAAM22Z54RDGMJKQTVKYIX6MHXMAEUYC2FWD5SDXPKE) | [Stellar Expert](https://stellar.expert/explorer/testnet/contract/CAETU7N2Y62QYKAAM22Z54RDGMJKQTVKYIX6MHXMAEUYC2FWD5SDXPKE) | 0–100 Landlord trust scores, physical title history & violation reports |
+| **03** | `tenant_credit_passport` | [`CCYZMG5TED7KI2UAVZYLZHGB2KMJIVEGMYQXXR4ZTWAN5XTOHQQILXT3`](https://stellar.expert/explorer/testnet/contract/CCYZMG5TED7KI2UAVZYLZHGB2KMJIVEGMYQXXR4ZTWAN5XTOHQQILXT3) | [Stellar Expert](https://stellar.expert/explorer/testnet/contract/CCYZMG5TED7KI2UAVZYLZHGB2KMJIVEGMYQXXR4ZTWAN5XTOHQQILXT3) | Rent-to-Credit scoring (300–850), monthly rent gating & guarantor links |
+| **04** | `rental_dispute_arbiter` | [`CCA4NJKOADMF273XQ77FVBJEHPSOHKCQA36LUKTWBAEU6COZYHXWR3MP`](https://stellar.expert/explorer/testnet/contract/CCA4NJKOADMF273XQ77FVBJEHPSOHKCQA36LUKTWBAEU6COZYHXWR3MP) | [Stellar Expert](https://stellar.expert/explorer/testnet/contract/CCA4NJKOADMF273XQ77FVBJEHPSOHKCQA36LUKTWBAEU6COZYHXWR3MP) | 2-of-3 community juror panel voting on Move-In/Move-Out SHA-256 diffs |
+| **05** | `tenancy_deed_registry` | [`CABCZ2EHEO62ONIVWILIBVR5AVNTBGOSXM6DI3FXKAGKEL5HSZMU2IVI`](https://stellar.expert/explorer/testnet/contract/CABCZ2EHEO62ONIVWILIBVR5AVNTBGOSXM6DI3FXKAGKEL5HSZMU2IVI) | [Stellar Expert](https://stellar.expert/explorer/testnet/contract/CABCZ2EHEO62ONIVWILIBVR5AVNTBGOSXM6DI3FXKAGKEL5HSZMU2IVI) | Dual-signed Soulbound Token (SBT) Tenancy Deeds & Proof of Address |
+| **06** | `rent_stream_vault` | [`CAG43Q6I7OFHOTAKJG5RIHMXU6N3G5YSE5AXCFEMHGISGXEIC6OGDVN4`](https://stellar.expert/explorer/testnet/contract/CAG43Q6I7OFHOTAKJG5RIHMXU6N3G5YSE5AXCFEMHGISGXEIC6OGDVN4) | [Stellar Expert](https://stellar.expert/explorer/testnet/contract/CAG43Q6I7OFHOTAKJG5RIHMXU6N3G5YSE5AXCFEMHGISGXEIC6OGDVN4) | Micro-rent monthly streaming vault with automated default buffers |
+| **07** | `property_maintenance_vault` | [`CAHEZNOJ4ZKA5WFLIL6UL5KIMPXJ4LBXGR26LEB6FGNTQCGXJIM76SAH`](https://stellar.expert/explorer/testnet/contract/CAHEZNOJ4ZKA5WFLIL6UL5KIMPXJ4LBXGR26LEB6FGNTQCGXJIM76SAH) | [Stellar Expert](https://stellar.expert/explorer/testnet/contract/CAHEZNOJ4ZKA5WFLIL6UL5KIMPXJ4LBXGR26LEB6FGNTQCGXJIM76SAH) | 48-Hour Emergency SLA repair vault & direct certified technician disbursements |
+| **08** | `rental_guarantor_vault` | [`CBF4YBDXUP3WWD2AG2XIE3MB5EL6QKUFIZTO4TJ4TYNEWXS4NH47J3MK`](https://stellar.expert/explorer/testnet/contract/CBF4YBDXUP3WWD2AG2XIE3MB5EL6QKUFIZTO4TJ4TYNEWXS4NH47J3MK) | [Stellar Expert](https://stellar.expert/explorer/testnet/contract/CBF4YBDXUP3WWD2AG2XIE3MB5EL6QKUFIZTO4TJ4TYNEWXS4NH47J3MK) | Co-signer surety stakes backing tenants with score < 650 with return guarantee |
+| **09** | `community_scout_verifier` | [`CA7COEZNMG7UXNGH53SSV5GTNMUTHFEJU7AZQJYPUWOM5EEVMFLDKCFK`](https://stellar.expert/explorer/testnet/contract/CA7COEZNMG7UXNGH53SSV5GTNMUTHFEJU7AZQJYPUWOM5EEVMFLDKCFK) | [Stellar Expert](https://stellar.expert/explorer/testnet/contract/CA7COEZNMG7UXNGH53SSV5GTNMUTHFEJU7AZQJYPUWOM5EEVMFLDKCFK) | Physical on-site property audits (Conlog meter, solar kVA, GPS coordinates) |
+| **10** | `utility_billing_escrow` | [`CA4JVBFM6QCHP4KJG6A5U2UUNAAIGDE4JIPZTNK66SKIAQZBSANWXQQI`](https://stellar.expert/explorer/testnet/contract/CA4JVBFM6QCHP4KJG6A5U2UUNAAIGDE4JIPZTNK66SKIAQZBSANWXQQI) | [Stellar Expert](https://stellar.expert/explorer/testnet/contract/CA4JVBFM6QCHP4KJG6A5U2UUNAAIGDE4JIPZTNK66SKIAQZBSANWXQQI) | Automated multi-tenant shared diesel generator and grid prepay pool |
 
 ---
 
@@ -106,11 +121,13 @@ In emerging urban centers across Africa (Lagos, Ibadan, Abuja, Nairobi), renting
 
 | Step | Action | Verifiable Outcome |
 | :--- | :--- | :--- |
-| **1. Voice Intake** | Open [`/studio`](https://d1dco6ew3il05x.cloudfront.net/studio/) and click **Preset 1 (Chief Adeleke)** or record audio | Real-time waveform pulses, Nigerian accent normalization extracts `₦1,600,000 / yr • 2 Beds • Solar Inverter • 16h Light`. |
-| **2. CV Audit** | In [`/studio`](https://d1dco6ew3il05x.cloudfront.net/studio/), inspect the property photo audit | Real-time bounding boxes detect the Conlog prepaid meter and solar battery bank. |
-| **3. Middleman Savings** | Visit [`/calculator`](https://d1dco6ew3il05x.cloudfront.net/calculator/) | Dynamic slider proves **₦320,000 saved** by eliminating 10% agency + 10% legal rackets. |
-| **4. Statutory Agreement** | Open any property (e.g. Bodija 2-Bed) & click **Generate Agreement** | Court-ready tenancy lease renders with statutory terms, ₦0 commission seal, and SHA-256 verification. |
-| **5. Soroban Escrow** | Inspect [`contracts/soroban_rental_escrow/`](./contracts/soroban_rental_escrow/) | Verifiable Soroban contract securing caution deposits in USDC with multi-sig release guarantees. |
+| **1. Voice Intake** | Open [`/studio`](https://d3oldfajqt8tgt.cloudfront.net/studio/) and click **Preset 1 (Chief Adeleke)** or record audio | Real-time waveform pulses, Nigerian accent normalization extracts `₦1,600,000 / yr • 2 Beds • Solar Inverter • 16h Light`. |
+| **2. CV & Scout Audit** | In [`/studio`](https://d3oldfajqt8tgt.cloudfront.net/studio/), inspect the property photo audit | Real-time bounding boxes detect Conlog prepaid meter, solar bank, and on-site scout bounty verification. |
+| **3. Middleman Savings** | Visit [`/calculator`](https://d3oldfajqt8tgt.cloudfront.net/calculator/) | Dynamic slider proves **₦320,000 saved** by eliminating 10% agency + 10% legal rackets. |
+| **4. Caution Escrow Console** | Visit [`/escrow`](https://d3oldfajqt8tgt.cloudfront.net/escrow/) | Live console managing caution locks, 48h emergency SLA repairs, diesel pooling, and surety bonds on Soroban. |
+| **5. Credit Passport** | Visit [`/passport`](https://d3oldfajqt8tgt.cloudfront.net/passport/) | Sovereign 300–850 credit passport unlocking monthly rent, co-signer bonds, and ZK salary proofs. |
+| **6. Community Jury** | Visit [`/arbitration`](https://d3oldfajqt8tgt.cloudfront.net/arbitration/) | 2-of-3 quorum community jury voting on Move-In vs Move-Out photo diffs. |
+| **7. Statutory Agreement** | Open any property dossier & click **Generate Agreement** | Court-ready tenancy lease renders with statutory terms, ₦0 commission seal, and SHA-256 verification. |
 
 ---
 

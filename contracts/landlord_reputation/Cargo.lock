@@ -771,6 +771,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "landlord-reputation"
+version = "0.1.0"
+dependencies = [
+ "soroban-sdk",
+]
+
+[[package]]
 name = "libc"
 version = "0.2.190"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1314,13 +1321,6 @@ dependencies = [
  "soroban-env-common",
  "soroban-env-host",
  "thiserror 1.0.69",
-]
-
-[[package]]
-name = "soroban-rental-escrow"
-version = "0.1.0"
-dependencies = [
- "soroban-sdk",
 ]
 
 [[package]]

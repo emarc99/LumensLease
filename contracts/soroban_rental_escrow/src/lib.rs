@@ -1,7 +1,15 @@
-﻿#![no_std]
+#![no_std]
 use soroban_sdk::{
-    contract, contracterror, contractimpl, contracttype, token, Address, BytesN, Env, String,
+    contract, contracterror, contractimpl, contracttype, symbol_short, token, Address, BytesN,
+    Env, String,
 };
+
+#[cfg(test)]
+mod test;
+
+// Storage TTL thresholds (~5 seconds per ledger on Stellar)
+const INSTANCE_BUMP_AMOUNT: u32 = 518_400; // ~30 days
+const INSTANCE_LIFETIME_THRESHOLD: u32 = 120_960; // ~7 days
 
 #[contracterror]
 #[derive(Copy, Clone, Debug, Eq, PartialEq, PartialOrd, Ord)]
@@ -66,10 +74,20 @@ impl RentalEscrowContract {
         env.storage().instance().set(&DataKey::Admin, &admin);
         env.storage().instance().set(&DataKey::PaymentToken, &token);
         env.storage().instance().set(&DataKey::LeaseCounter, &0u64);
+
+        env.storage()
+            .instance()
+            .extend_ttl(INSTANCE_LIFETIME_THRESHOLD, INSTANCE_BUMP_AMOUNT);
+
+        env.events().publish(
+            (symbol_short!("escrow"), symbol_short!("init")),
+            (admin, token),
+        );
+
         Ok(())
     }
 
-    /// Register a new digital lease agreement with terms and property digest
+    /// Register a new digital lease agreement with terms and SHA-256 property audit digest
     pub fn create_lease(
         env: Env,
         tenant: Address,
@@ -94,12 +112,12 @@ impl RentalEscrowContract {
 
         let lease = LeaseAgreement {
             lease_id: counter,
-            tenant,
-            landlord,
+            tenant: tenant.clone(),
+            landlord: landlord.clone(),
             rent_amount,
             caution_deposit,
             lease_duration_days,
-            property_hash,
+            property_hash: property_hash.clone(),
             status: EscrowStatus::Created,
             funded_at: 0,
             rent_disbursed: false,
@@ -107,7 +125,21 @@ impl RentalEscrowContract {
         };
 
         env.storage().persistent().set(&DataKey::Lease(counter), &lease);
+        env.storage().persistent().extend_ttl(
+            &DataKey::Lease(counter),
+            INSTANCE_LIFETIME_THRESHOLD,
+            INSTANCE_BUMP_AMOUNT,
+        );
+
         env.storage().instance().set(&DataKey::LeaseCounter, &counter);
+        env.storage()
+            .instance()
+            .extend_ttl(INSTANCE_LIFETIME_THRESHOLD, INSTANCE_BUMP_AMOUNT);
+
+        env.events().publish(
+            (symbol_short!("lease"), symbol_short!("created")),
+            (counter, tenant, landlord, rent_amount, caution_deposit),
+        );
 
         Ok(counter)
     }
@@ -143,11 +175,21 @@ impl RentalEscrowContract {
         lease.status = EscrowStatus::Funded;
         lease.funded_at = env.ledger().timestamp();
         env.storage().persistent().set(&DataKey::Lease(lease_id), &lease);
+        env.storage().persistent().extend_ttl(
+            &DataKey::Lease(lease_id),
+            INSTANCE_LIFETIME_THRESHOLD,
+            INSTANCE_BUMP_AMOUNT,
+        );
+
+        env.events().publish(
+            (symbol_short!("lease"), symbol_short!("funded")),
+            (lease_id, caller, total_required),
+        );
 
         Ok(())
     }
 
-    /// Disburse periodic rent to landlord after initial occupancy verification
+    /// Disburse periodic rent to landlord after initial occupancy / move-in inspection
     pub fn disburse_rent(env: Env, lease_id: u64, caller: Address) -> Result<(), Error> {
         caller.require_auth();
 
@@ -181,6 +223,16 @@ impl RentalEscrowContract {
         lease.rent_disbursed = true;
         lease.status = EscrowStatus::Active;
         env.storage().persistent().set(&DataKey::Lease(lease_id), &lease);
+        env.storage().persistent().extend_ttl(
+            &DataKey::Lease(lease_id),
+            INSTANCE_LIFETIME_THRESHOLD,
+            INSTANCE_BUMP_AMOUNT,
+        );
+
+        env.events().publish(
+            (symbol_short!("lease"), symbol_short!("disbursed")),
+            (lease_id, lease.landlord, lease.rent_amount),
+        );
 
         Ok(())
     }
@@ -219,6 +271,16 @@ impl RentalEscrowContract {
         lease.deposit_released = true;
         lease.status = EscrowStatus::Completed;
         env.storage().persistent().set(&DataKey::Lease(lease_id), &lease);
+        env.storage().persistent().extend_ttl(
+            &DataKey::Lease(lease_id),
+            INSTANCE_LIFETIME_THRESHOLD,
+            INSTANCE_BUMP_AMOUNT,
+        );
+
+        env.events().publish(
+            (symbol_short!("lease"), symbol_short!("released")),
+            (lease_id, lease.tenant, lease.caution_deposit),
+        );
 
         Ok(())
     }
@@ -228,7 +290,7 @@ impl RentalEscrowContract {
         env: Env,
         lease_id: u64,
         caller: Address,
-        _reason: String,
+        reason: String,
     ) -> Result<(), Error> {
         caller.require_auth();
 
@@ -248,6 +310,16 @@ impl RentalEscrowContract {
 
         lease.status = EscrowStatus::Disputed;
         env.storage().persistent().set(&DataKey::Lease(lease_id), &lease);
+        env.storage().persistent().extend_ttl(
+            &DataKey::Lease(lease_id),
+            INSTANCE_LIFETIME_THRESHOLD,
+            INSTANCE_BUMP_AMOUNT,
+        );
+
+        env.events().publish(
+            (symbol_short!("lease"), symbol_short!("disputed")),
+            (lease_id, caller, reason),
+        );
 
         Ok(())
     }
@@ -305,6 +377,16 @@ impl RentalEscrowContract {
         lease.deposit_released = true;
         lease.status = EscrowStatus::Completed;
         env.storage().persistent().set(&DataKey::Lease(lease_id), &lease);
+        env.storage().persistent().extend_ttl(
+            &DataKey::Lease(lease_id),
+            INSTANCE_LIFETIME_THRESHOLD,
+            INSTANCE_BUMP_AMOUNT,
+        );
+
+        env.events().publish(
+            (symbol_short!("lease"), symbol_short!("resolved")),
+            (lease_id, tenant_refund, landlord_payout),
+        );
 
         Ok(())
     }
@@ -315,5 +397,39 @@ impl RentalEscrowContract {
             .persistent()
             .get(&DataKey::Lease(lease_id))
             .ok_or(Error::LeaseNotFound)
+    }
+
+    /// Read total number of leases created
+    pub fn get_lease_count(env: Env) -> u64 {
+        env.storage()
+            .instance()
+            .get(&DataKey::LeaseCounter)
+            .unwrap_or(0)
+    }
+
+    /// Read protocol admin address
+    pub fn get_admin(env: Env) -> Result<Address, Error> {
+        env.storage()
+            .instance()
+            .get(&DataKey::Admin)
+            .ok_or(Error::NotInitialized)
+    }
+
+    /// Read protocol settlement token address
+    pub fn get_payment_token(env: Env) -> Result<Address, Error> {
+        env.storage()
+            .instance()
+            .get(&DataKey::PaymentToken)
+            .ok_or(Error::NotInitialized)
+    }
+
+    /// Cryptographically verify if a candidate SHA-256 matches the registered move-in audit hash
+    pub fn verify_property_hash(
+        env: Env,
+        lease_id: u64,
+        check_hash: BytesN<32>,
+    ) -> Result<bool, Error> {
+        let lease = Self::get_lease(env, lease_id)?;
+        Ok(lease.property_hash == check_hash)
     }
 }

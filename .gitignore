@@ -42,3 +42,9 @@ next-env.d.ts
 
 # scratch
 scratch/
+
+# rust
+target/
+**/target/
+target_wasm/
+**/target_wasm/

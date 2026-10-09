@@ -32,6 +32,7 @@ pub enum StreamStatus {
     Completed = 2,
     Defaulted = 3,
     Cancelled = 4,
+    Paused = 5,
 }
 
 #[contracttype]
@@ -391,5 +392,83 @@ impl RentStreamVaultContract {
             .instance()
             .get(&DataKey::TotalStreams)
             .unwrap_or(0)
+    }
+
+    /// Tenant or Landlord pauses rent stream pending habitability / maintenance dispute
+    pub fn pause_stream(
+        env: Env,
+        stream_id: u64,
+        caller: Address,
+    ) -> Result<(), StreamError> {
+        caller.require_auth();
+
+        let mut stream: RentStream = env
+            .storage()
+            .persistent()
+            .get(&DataKey::Stream(stream_id))
+            .ok_or(StreamError::StreamNotFound)?;
+
+        if stream.status != StreamStatus::Active {
+            return Err(StreamError::InvalidState);
+        }
+
+        if caller != stream.tenant && caller != stream.landlord {
+            return Err(StreamError::Unauthorized);
+        }
+
+        stream.status = StreamStatus::Paused;
+
+        env.storage().persistent().set(&DataKey::Stream(stream_id), &stream);
+        env.storage().persistent().extend_ttl(
+            &DataKey::Stream(stream_id),
+            INSTANCE_LIFETIME_THRESHOLD,
+            INSTANCE_BUMP_AMOUNT,
+        );
+
+        env.events().publish(
+            (symbol_short!("stream"), symbol_short!("paused")),
+            (stream_id, caller),
+        );
+
+        Ok(())
+    }
+
+    /// Resume an active rent stream after dispute resolution
+    pub fn resume_stream(
+        env: Env,
+        stream_id: u64,
+        caller: Address,
+    ) -> Result<(), StreamError> {
+        caller.require_auth();
+
+        let mut stream: RentStream = env
+            .storage()
+            .persistent()
+            .get(&DataKey::Stream(stream_id))
+            .ok_or(StreamError::StreamNotFound)?;
+
+        if stream.status != StreamStatus::Paused {
+            return Err(StreamError::InvalidState);
+        }
+
+        if caller != stream.tenant && caller != stream.landlord {
+            return Err(StreamError::Unauthorized);
+        }
+
+        stream.status = StreamStatus::Active;
+
+        env.storage().persistent().set(&DataKey::Stream(stream_id), &stream);
+        env.storage().persistent().extend_ttl(
+            &DataKey::Stream(stream_id),
+            INSTANCE_LIFETIME_THRESHOLD,
+            INSTANCE_BUMP_AMOUNT,
+        );
+
+        env.events().publish(
+            (symbol_short!("stream"), symbol_short!("resumed")),
+            (stream_id, caller),
+        );
+
+        Ok(())
     }
 }

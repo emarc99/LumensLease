@@ -95,3 +95,38 @@ fn test_invalid_review_rating_rejected() {
     let res6 = client.try_submit_tenant_review(&tenant, &landlord, &6, &review_hash);
     assert!(res6.is_err());
 }
+
+#[test]
+fn test_violations_and_scout_verification() {
+    let env = Env::default();
+    env.mock_all_auths();
+
+    let admin = Address::generate(&env);
+    let landlord = Address::generate(&env);
+    let tenant = Address::generate(&env);
+    let scout = Address::generate(&env);
+
+    let contract_id = env.register_contract(None, LandlordReputationContract);
+    let client = LandlordReputationContractClient::new(&env, &contract_id);
+
+    client.initialize(&admin);
+    let name = String::from_str(&env, "Alhaji Danladi");
+    client.register_landlord(&landlord, &name, &true); // score = 80
+
+    // Scout physical verification adds +5 points
+    let prop_id = String::from_str(&env, "prop-lekki-44");
+    let score_after_scout = client.record_scout_verification(&admin, &landlord, &prop_id, &scout);
+    assert_eq!(score_after_scout, 85);
+
+    // Tenant reports violation (e.g. broken borehole ignored for 3 weeks)
+    let evid = BytesN::from_array(&env, &[77u8; 32]);
+    let score_after_violation = client.report_violation(&tenant, &landlord, &1, &evid);
+    assert_eq!(score_after_violation, 75);
+
+    let violations = client.get_landlord_violations(&landlord);
+    assert_eq!(violations.len(), 1);
+    let v = violations.get(0).unwrap();
+    assert_eq!(v.violation_code, 1);
+    assert_eq!(v.tenant, tenant);
+}
+

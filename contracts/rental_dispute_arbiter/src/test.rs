@@ -115,3 +115,32 @@ fn test_dispute_split_fifty_fifty_ruling() {
     assert_eq!(case.tenant_payout, 50_000_0000000i128);
     assert_eq!(case.landlord_payout, 50_000_0000000i128);
 }
+
+#[test]
+fn test_escrow_config_and_appeal() {
+    let env = Env::default();
+    env.mock_all_auths();
+
+    let admin = Address::generate(&env);
+    let escrow = Address::generate(&env);
+    let tenant = Address::generate(&env);
+    let landlord = Address::generate(&env);
+
+    let contract_id = env.register_contract(None, RentalDisputeArbiterContract);
+    let client = RentalDisputeArbiterContractClient::new(&env, &contract_id);
+
+    client.initialize(&admin);
+    client.set_escrow_contract(&admin, &escrow);
+    assert_eq!(client.get_escrow_contract(), escrow);
+
+    let caution = 100_000_0000000i128;
+    let h1 = BytesN::from_array(&env, &[1u8; 32]);
+    let h2 = BytesN::from_array(&env, &[2u8; 32]);
+
+    let dispute_id = client.lodge_dispute(&tenant, &555, &tenant, &landlord, &caution, &h1, &h2);
+
+    // Tenant lodges supplementary photo evidence appeal
+    let appeal_hash = BytesN::from_array(&env, &[99u8; 32]);
+    client.submit_appeal_evidence(&tenant, &dispute_id, &appeal_hash);
+}
+

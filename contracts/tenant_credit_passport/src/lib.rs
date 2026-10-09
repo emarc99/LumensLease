@@ -64,6 +64,8 @@ pub enum DataKey {
     Admin,
     Tenant(Address),
     PaymentHistory(Address),
+    Guarantor(Address),
+    IncomeProof(Address),
     TotalTenants,
 }
 
@@ -326,5 +328,91 @@ impl TenantCreditPassportContract {
             .instance()
             .get(&DataKey::TotalTenants)
             .unwrap_or(0)
+    }
+
+    /// Attach a registered guarantor to tenant profile with credit score bonus (+20 pts)
+    pub fn attach_guarantor(
+        env: Env,
+        tenant: Address,
+        guarantor: Address,
+    ) -> Result<u32, CreditError> {
+        tenant.require_auth();
+
+        let mut profile: TenantCreditProfile = env
+            .storage()
+            .persistent()
+            .get(&DataKey::Tenant(tenant.clone()))
+            .ok_or(CreditError::TenantNotFound)?;
+
+        if profile.credit_score + 20 <= MAX_CREDIT_SCORE {
+            profile.credit_score += 20;
+        } else {
+            profile.credit_score = MAX_CREDIT_SCORE;
+        }
+
+        profile.tier = calculate_tier(profile.credit_score);
+        profile.qualifies_for_monthly_rent = profile.credit_score >= MONTHLY_RENT_QUALIFYING_SCORE;
+
+        env.storage()
+            .persistent()
+            .set(&DataKey::Tenant(tenant.clone()), &profile);
+        env.storage()
+            .persistent()
+            .set(&DataKey::Guarantor(tenant.clone()), &guarantor);
+        env.storage().persistent().extend_ttl(
+            &DataKey::Guarantor(tenant.clone()),
+            INSTANCE_LIFETIME_THRESHOLD,
+            INSTANCE_BUMP_AMOUNT,
+        );
+
+        env.events().publish(
+            (symbol_short!("credit"), symbol_short!("guarantor")),
+            (tenant, guarantor, profile.credit_score),
+        );
+
+        Ok(profile.credit_score)
+    }
+
+    /// Attach cryptographic income / salary verification digest
+    pub fn attach_income_verification(
+        env: Env,
+        tenant: Address,
+        employer_hash: BytesN<32>,
+    ) -> Result<(), CreditError> {
+        tenant.require_auth();
+
+        if !env.storage().persistent().has(&DataKey::Tenant(tenant.clone())) {
+            return Err(CreditError::TenantNotFound);
+        }
+
+        env.storage()
+            .persistent()
+            .set(&DataKey::IncomeProof(tenant.clone()), &employer_hash);
+        env.storage().persistent().extend_ttl(
+            &DataKey::IncomeProof(tenant.clone()),
+            INSTANCE_LIFETIME_THRESHOLD,
+            INSTANCE_BUMP_AMOUNT,
+        );
+
+        env.events().publish(
+            (symbol_short!("credit"), symbol_short!("income")),
+            (tenant, employer_hash),
+        );
+
+        Ok(())
+    }
+
+    /// Read guarantor for tenant
+    pub fn get_tenant_guarantor(env: Env, tenant: Address) -> Option<Address> {
+        env.storage()
+            .persistent()
+            .get(&DataKey::Guarantor(tenant))
+    }
+
+    /// Read income verification hash for tenant
+    pub fn get_income_verification(env: Env, tenant: Address) -> Option<BytesN<32>> {
+        env.storage()
+            .persistent()
+            .get(&DataKey::IncomeProof(tenant))
     }
 }

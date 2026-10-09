@@ -127,3 +127,43 @@ fn test_default_buffer_payout() {
     let stream = client.get_stream(&stream_id);
     assert_eq!(stream.status, StreamStatus::Defaulted);
 }
+
+#[test]
+fn test_pause_and_resume_stream() {
+    let env = Env::default();
+    env.mock_all_auths();
+
+    let admin = Address::generate(&env);
+    let token_admin = Address::generate(&env);
+    let token_contract = env.register_stellar_asset_contract_v2(token_admin.clone());
+    let token_id = token_contract.address();
+    let stellar_token = StellarAssetClient::new(&env, &token_id);
+
+    let contract_id = env.register_contract(None, RentStreamVaultContract);
+    let client = RentStreamVaultContractClient::new(&env, &contract_id);
+
+    client.initialize(&admin, &token_id);
+
+    let tenant = Address::generate(&env);
+    let landlord = Address::generate(&env);
+
+    stellar_token.mint(&tenant, &200_0000000);
+
+    let stream_id = client.create_stream(&tenant, &tenant, &landlord, &100_0000000, &50_0000000, &12);
+    client.fund_initial_stream(&stream_id, &tenant);
+
+    // Pause stream
+    client.pause_stream(&stream_id, &tenant);
+    let stream = client.get_stream(&stream_id);
+    assert_eq!(stream.status, StreamStatus::Paused);
+
+    // Installment claim cannot happen while paused
+    let claim_res = client.try_claim_installment(&stream_id, &landlord);
+    assert!(claim_res.is_err());
+
+    // Resume stream
+    client.resume_stream(&stream_id, &tenant);
+    let stream_resumed = client.get_stream(&stream_id);
+    assert_eq!(stream_resumed.status, StreamStatus::Active);
+}
+

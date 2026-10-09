@@ -88,3 +88,32 @@ fn test_default_penalizes_credit_score() {
     assert_eq!(profile.disputes_count, 1);
     assert_eq!(profile.tier, CreditTier::Bronze);
 }
+
+#[test]
+fn test_guarantor_and_income_verification() {
+    let env = Env::default();
+    env.mock_all_auths();
+
+    let admin = Address::generate(&env);
+    let tenant = Address::generate(&env);
+    let guarantor = Address::generate(&env);
+
+    let contract_id = env.register_contract(None, TenantCreditPassportContract);
+    let client = TenantCreditPassportContractClient::new(&env, &contract_id);
+
+    client.initialize(&admin);
+    let id_hash = BytesN::from_array(&env, &[1u8; 32]);
+    client.register_tenant(&tenant, &id_hash);
+
+    // Initial score = 500
+    // Attaching guarantor gives +20 points -> 520
+    let score = client.attach_guarantor(&tenant, &guarantor);
+    assert_eq!(score, 520);
+    assert_eq!(client.get_tenant_guarantor(&tenant), Some(guarantor));
+
+    // Attach employer income proof hash
+    let emp_hash = BytesN::from_array(&env, &[88u8; 32]);
+    client.attach_income_verification(&tenant, &emp_hash);
+    assert_eq!(client.get_income_verification(&tenant), Some(emp_hash));
+}
+

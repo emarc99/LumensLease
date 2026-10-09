@@ -25,6 +25,8 @@ pub enum Error {
     InvalidState = 6,
     DisputeAlreadyRaised = 7,
     TimeoutNotReached = 8,
+    ContractPaused = 9,
+    InvalidCaller = 10,
 }
 
 #[contracttype]
@@ -65,6 +67,8 @@ pub enum DataKey {
     PaymentToken,
     LeaseCounter,
     Lease(u64),
+    ArbiterContract,
+    IsPaused,
 }
 
 #[contract]
@@ -664,5 +668,211 @@ impl RentalEscrowContract {
     ) -> Result<bool, Error> {
         let lease = Self::get_lease(env, lease_id)?;
         Ok(lease.property_hash == check_hash)
+    }
+
+    /// Admin authorizes an accredited dispute arbitration contract
+    pub fn set_arbiter_contract(
+        env: Env,
+        admin: Address,
+        arbiter: Address,
+    ) -> Result<(), Error> {
+        admin.require_auth();
+
+        let stored_admin: Address = env
+            .storage()
+            .instance()
+            .get(&DataKey::Admin)
+            .ok_or(Error::NotInitialized)?;
+
+        if admin != stored_admin {
+            return Err(Error::Unauthorized);
+        }
+
+        env.storage()
+            .instance()
+            .set(&DataKey::ArbiterContract, &arbiter);
+        env.storage()
+            .instance()
+            .extend_ttl(INSTANCE_LIFETIME_THRESHOLD, INSTANCE_BUMP_AMOUNT);
+
+        env.events().publish(
+            (symbol_short!("escrow"), symbol_short!("set_arb")),
+            arbiter,
+        );
+
+        Ok(())
+    }
+
+    /// Read authorized arbiter contract address
+    pub fn get_arbiter_contract(env: Env) -> Result<Address, Error> {
+        env.storage()
+            .instance()
+            .get(&DataKey::ArbiterContract)
+            .ok_or(Error::NotInitialized)
+    }
+
+    /// Direct settlement executed by the accredited Rental Dispute Arbiter contract
+    pub fn resolve_dispute_by_arbiter(
+        env: Env,
+        lease_id: u64,
+        caller: Address,
+        tenant_refund: i128,
+        landlord_payout: i128,
+    ) -> Result<(), Error> {
+        caller.require_auth();
+
+        let authorized_arbiter: Address = env
+            .storage()
+            .instance()
+            .get(&DataKey::ArbiterContract)
+            .ok_or(Error::NotInitialized)?;
+
+        if caller != authorized_arbiter {
+            return Err(Error::Unauthorized);
+        }
+
+        let mut lease: LeaseAgreement = env
+            .storage()
+            .persistent()
+            .get(&DataKey::Lease(lease_id))
+            .ok_or(Error::LeaseNotFound)?;
+
+        if lease.status != EscrowStatus::Disputed {
+            return Err(Error::InvalidState);
+        }
+
+        if tenant_refund + landlord_payout != lease.caution_deposit {
+            return Err(Error::InvalidAmount);
+        }
+
+        let token_addr: Address = env
+            .storage()
+            .instance()
+            .get(&DataKey::PaymentToken)
+            .ok_or(Error::NotInitialized)?;
+
+        let token_client = token::Client::new(&env, &token_addr);
+
+        if tenant_refund > 0 {
+            token_client.transfer(&env.current_contract_address(), &lease.tenant, &tenant_refund);
+        }
+
+        if landlord_payout > 0 {
+            token_client.transfer(&env.current_contract_address(), &lease.landlord, &landlord_payout);
+        }
+
+        lease.deposit_released = true;
+        lease.status = EscrowStatus::Completed;
+        env.storage().persistent().set(&DataKey::Lease(lease_id), &lease);
+        env.storage().persistent().extend_ttl(
+            &DataKey::Lease(lease_id),
+            INSTANCE_LIFETIME_THRESHOLD,
+            INSTANCE_BUMP_AMOUNT,
+        );
+
+        env.events().publish(
+            (symbol_short!("lease"), symbol_short!("arb_res")),
+            (lease_id, tenant_refund, landlord_payout),
+        );
+
+        Ok(())
+    }
+
+    /// Landlord and tenant renew an active lease for additional days
+    pub fn renew_lease(
+        env: Env,
+        lease_id: u64,
+        caller: Address,
+        additional_days: u64,
+        additional_rent: i128,
+    ) -> Result<(), Error> {
+        caller.require_auth();
+
+        let mut lease: LeaseAgreement = env
+            .storage()
+            .persistent()
+            .get(&DataKey::Lease(lease_id))
+            .ok_or(Error::LeaseNotFound)?;
+
+        if lease.status != EscrowStatus::Active {
+            return Err(Error::InvalidState);
+        }
+
+        if caller != lease.tenant && caller != lease.landlord {
+            return Err(Error::Unauthorized);
+        }
+
+        if additional_days == 0 {
+            return Err(Error::InvalidAmount);
+        }
+
+        // If additional rent is funded, transfer from tenant to landlord
+        if additional_rent > 0 {
+            lease.tenant.require_auth();
+            let token_addr: Address = env
+                .storage()
+                .instance()
+                .get(&DataKey::PaymentToken)
+                .ok_or(Error::NotInitialized)?;
+
+            let token_client = token::Client::new(&env, &token_addr);
+            token_client.transfer(&lease.tenant, &lease.landlord, &additional_rent);
+            lease.rent_amount += additional_rent;
+        }
+
+        lease.lease_duration_days += additional_days;
+
+        env.storage().persistent().set(&DataKey::Lease(lease_id), &lease);
+        env.storage().persistent().extend_ttl(
+            &DataKey::Lease(lease_id),
+            INSTANCE_LIFETIME_THRESHOLD,
+            INSTANCE_BUMP_AMOUNT,
+        );
+
+        env.events().publish(
+            (symbol_short!("lease"), symbol_short!("renewed")),
+            (lease_id, lease.lease_duration_days, additional_rent),
+        );
+
+        Ok(())
+    }
+
+    /// Admin emergency pause toggle
+    pub fn set_emergency_pause(
+        env: Env,
+        admin: Address,
+        paused: bool,
+    ) -> Result<(), Error> {
+        admin.require_auth();
+
+        let stored_admin: Address = env
+            .storage()
+            .instance()
+            .get(&DataKey::Admin)
+            .ok_or(Error::NotInitialized)?;
+
+        if admin != stored_admin {
+            return Err(Error::Unauthorized);
+        }
+
+        env.storage().instance().set(&DataKey::IsPaused, &paused);
+        env.storage()
+            .instance()
+            .extend_ttl(INSTANCE_LIFETIME_THRESHOLD, INSTANCE_BUMP_AMOUNT);
+
+        env.events().publish(
+            (symbol_short!("escrow"), symbol_short!("pause")),
+            paused,
+        );
+
+        Ok(())
+    }
+
+    /// Check if protocol is paused
+    pub fn is_paused(env: Env) -> bool {
+        env.storage()
+            .instance()
+            .get(&DataKey::IsPaused)
+            .unwrap_or(false)
     }
 }

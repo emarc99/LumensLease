@@ -57,11 +57,21 @@ pub struct TenantReview {
 }
 
 #[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct LandlordViolation {
+    pub tenant: Address,
+    pub violation_code: u32, // 1 = habitability breach, 2 = illegal lockout, 3 = utility extortion
+    pub evidence_hash: BytesN<32>,
+    pub timestamp: u64,
+}
+
+#[contracttype]
 pub enum DataKey {
     Admin,
     Landlord(Address),
     PropertyAudit(String),
     Reviews(Address),
+    Violations(Address),
     TotalLandlords,
 }
 
@@ -341,5 +351,114 @@ impl LandlordReputationContract {
             .instance()
             .get(&DataKey::TotalLandlords)
             .unwrap_or(0)
+    }
+
+    /// Report an on-chain landlord violation with evidence digest
+    pub fn report_violation(
+        env: Env,
+        tenant: Address,
+        landlord: Address,
+        violation_code: u32,
+        evidence_hash: BytesN<32>,
+    ) -> Result<u32, ReputationError> {
+        tenant.require_auth();
+
+        let mut profile: LandlordProfile = env
+            .storage()
+            .persistent()
+            .get(&DataKey::Landlord(landlord.clone()))
+            .ok_or(ReputationError::LandlordNotFound)?;
+
+        // Deduct 10 points for reported violation down to 10 minimum
+        if profile.trust_score > 20 {
+            profile.trust_score -= 10;
+        } else {
+            profile.trust_score = 10;
+        }
+
+        env.storage()
+            .persistent()
+            .set(&DataKey::Landlord(landlord.clone()), &profile);
+
+        let mut violations: Vec<LandlordViolation> = env
+            .storage()
+            .persistent()
+            .get(&DataKey::Violations(landlord.clone()))
+            .unwrap_or(Vec::new(&env));
+
+        violations.push_back(LandlordViolation {
+            tenant: tenant.clone(),
+            violation_code,
+            evidence_hash: evidence_hash.clone(),
+            timestamp: env.ledger().timestamp(),
+        });
+
+        env.storage()
+            .persistent()
+            .set(&DataKey::Violations(landlord.clone()), &violations);
+        env.storage().persistent().extend_ttl(
+            &DataKey::Violations(landlord.clone()),
+            INSTANCE_LIFETIME_THRESHOLD,
+            INSTANCE_BUMP_AMOUNT,
+        );
+
+        env.events().publish(
+            (symbol_short!("rep"), symbol_short!("violation")),
+            (landlord, tenant, violation_code),
+        );
+
+        Ok(profile.trust_score)
+    }
+
+    /// Community Scout physical inspection boost for landlord property
+    pub fn record_scout_verification(
+        env: Env,
+        admin: Address,
+        landlord: Address,
+        property_id: String,
+        scout: Address,
+    ) -> Result<u32, ReputationError> {
+        admin.require_auth();
+
+        let stored_admin: Address = env
+            .storage()
+            .instance()
+            .get(&DataKey::Admin)
+            .ok_or(ReputationError::NotInitialized)?;
+
+        if admin != stored_admin {
+            return Err(ReputationError::Unauthorized);
+        }
+
+        let mut profile: LandlordProfile = env
+            .storage()
+            .persistent()
+            .get(&DataKey::Landlord(landlord.clone()))
+            .ok_or(ReputationError::LandlordNotFound)?;
+
+        if profile.trust_score < 95 {
+            profile.trust_score += 5;
+        } else {
+            profile.trust_score = 100;
+        }
+
+        env.storage()
+            .persistent()
+            .set(&DataKey::Landlord(landlord.clone()), &profile);
+
+        env.events().publish(
+            (symbol_short!("rep"), symbol_short!("scout")),
+            (landlord, property_id, scout),
+        );
+
+        Ok(profile.trust_score)
+    }
+
+    /// Read recorded landlord violations
+    pub fn get_landlord_violations(env: Env, landlord: Address) -> Vec<LandlordViolation> {
+        env.storage()
+            .persistent()
+            .get(&DataKey::Violations(landlord))
+            .unwrap_or(Vec::new(&env))
     }
 }

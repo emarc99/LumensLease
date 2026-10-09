@@ -1,7 +1,7 @@
 #![no_std]
 use soroban_sdk::{
     contract, contracterror, contractimpl, contracttype, symbol_short, Address, BytesN, Env,
-    String,
+    String, Vec,
 };
 
 #[cfg(test)]
@@ -78,6 +78,7 @@ pub enum DataKey {
     Admin,
     Deed(u64),
     TenantActiveDeed(Address),
+    Amendments(u64),
     TotalDeeds,
 }
 
@@ -376,5 +377,57 @@ impl TenancyDeedRegistry {
             .instance()
             .get(&DataKey::TotalDeeds)
             .unwrap_or(0)
+    }
+
+    /// Add an immutable statutory amendment / addendum hash to an executed tenancy deed
+    pub fn add_deed_amendment(
+        env: Env,
+        deed_id: u64,
+        caller: Address,
+        amendment_hash: BytesN<32>,
+    ) -> Result<(), DeedError> {
+        caller.require_auth();
+
+        let deed: TenancyDeed = env
+            .storage()
+            .persistent()
+            .get(&DataKey::Deed(deed_id))
+            .ok_or(DeedError::DeedNotFound)?;
+
+        if caller != deed.landlord && caller != deed.tenant {
+            return Err(DeedError::Unauthorized);
+        }
+
+        let mut amendments: Vec<BytesN<32>> = env
+            .storage()
+            .persistent()
+            .get(&DataKey::Amendments(deed_id))
+            .unwrap_or(Vec::new(&env));
+
+        amendments.push_back(amendment_hash.clone());
+
+        env.storage()
+            .persistent()
+            .set(&DataKey::Amendments(deed_id), &amendments);
+        env.storage().persistent().extend_ttl(
+            &DataKey::Amendments(deed_id),
+            INSTANCE_LIFETIME_THRESHOLD,
+            INSTANCE_BUMP_AMOUNT,
+        );
+
+        env.events().publish(
+            (symbol_short!("deed"), symbol_short!("amend")),
+            (deed_id, caller, amendment_hash),
+        );
+
+        Ok(())
+    }
+
+    /// Read list of amendment hashes for deed
+    pub fn get_deed_amendments(env: Env, deed_id: u64) -> Vec<BytesN<32>> {
+        env.storage()
+            .persistent()
+            .get(&DataKey::Amendments(deed_id))
+            .unwrap_or(Vec::new(&env))
     }
 }

@@ -292,3 +292,50 @@ fn test_invalid_amounts_fail() {
     let res2 = client.try_create_lease(&tenant, &landlord, &-500, &100, &365, &hash);
     assert!(res2.is_err());
 }
+
+#[test]
+fn test_arbiter_resolution_and_lease_renewal() {
+    let (env, client, admin, landlord, tenant, token_client, token_admin_client) = setup_test();
+
+    let arbiter_contract = Address::generate(&env);
+    client.set_arbiter_contract(&admin, &arbiter_contract);
+    assert_eq!(client.get_arbiter_contract(), arbiter_contract);
+
+    let rent = 1_000_000_0000000i128;
+    let caution = 100_000_0000000i128;
+    token_admin_client.mint(&tenant, &(rent + caution + 500_000_0000000i128));
+
+    let hash = BytesN::from_array(&env, &[12u8; 32]);
+    let lease_id = client.create_lease(&tenant, &landlord, &rent, &caution, &180, &hash);
+
+    client.fund_lease(&lease_id, &tenant);
+    client.disburse_rent(&lease_id, &landlord);
+
+    // Test lease renewal for an extra 90 days with additional rent
+    let additional_rent = 500_000_0000000i128;
+    client.renew_lease(&lease_id, &tenant, &90, &additional_rent);
+    let renewed_lease = client.get_lease(&lease_id);
+    assert_eq!(renewed_lease.lease_duration_days, 270);
+    assert_eq!(renewed_lease.rent_amount, rent + additional_rent);
+
+    // Test dispute and arbiter resolution
+    let reason = String::from_str(&env, "Dispute over repainting");
+    client.raise_dispute(&lease_id, &tenant, &reason);
+
+    // Unauthorized non-arbiter cannot resolve
+    let fake_arbiter = Address::generate(&env);
+    let unauthorized_res = client.try_resolve_dispute_by_arbiter(&lease_id, &fake_arbiter, &50_000_0000000i128, &50_000_0000000i128);
+    assert!(unauthorized_res.is_err());
+
+    // Arbiter contract resolves 50/50
+    client.resolve_dispute_by_arbiter(&lease_id, &arbiter_contract, &50_000_0000000i128, &50_000_0000000i128);
+    let resolved_lease = client.get_lease(&lease_id);
+    assert_eq!(resolved_lease.status, EscrowStatus::Completed);
+    assert_eq!(token_client.balance(&tenant), 50_000_0000000i128);
+
+    // Test emergency pause
+    assert!(!client.is_paused());
+    client.set_emergency_pause(&admin, &true);
+    assert!(client.is_paused());
+}
+

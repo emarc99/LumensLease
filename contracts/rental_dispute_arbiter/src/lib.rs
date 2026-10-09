@@ -70,6 +70,7 @@ pub enum DataKey {
     Dispute(u64),
     DisputeCounter,
     TotalArbitrators,
+    EscrowContract,
 }
 
 #[contract]
@@ -321,5 +322,77 @@ impl RentalDisputeArbiterContract {
             .instance()
             .get(&DataKey::DisputeCounter)
             .unwrap_or(0)
+    }
+
+    /// Admin configures authorized Rental Escrow contract address for binding settlements
+    pub fn set_escrow_contract(
+        env: Env,
+        admin: Address,
+        escrow: Address,
+    ) -> Result<(), DisputeError> {
+        admin.require_auth();
+
+        let stored_admin: Address = env
+            .storage()
+            .instance()
+            .get(&DataKey::Admin)
+            .ok_or(DisputeError::NotInitialized)?;
+
+        if admin != stored_admin {
+            return Err(DisputeError::Unauthorized);
+        }
+
+        env.storage()
+            .instance()
+            .set(&DataKey::EscrowContract, &escrow);
+        env.storage()
+            .instance()
+            .extend_ttl(INSTANCE_LIFETIME_THRESHOLD, INSTANCE_BUMP_AMOUNT);
+
+        env.events().publish(
+            (symbol_short!("arbiter"), symbol_short!("set_esc")),
+            escrow,
+        );
+
+        Ok(())
+    }
+
+    /// Read configured escrow contract address
+    pub fn get_escrow_contract(env: Env) -> Result<Address, DisputeError> {
+        env.storage()
+            .instance()
+            .get(&DataKey::EscrowContract)
+            .ok_or(DisputeError::NotInitialized)
+    }
+
+    /// Tenant or Landlord submits supplemental appeal evidence before voting concludes
+    pub fn submit_appeal_evidence(
+        env: Env,
+        caller: Address,
+        dispute_id: u64,
+        appeal_evidence_hash: BytesN<32>,
+    ) -> Result<(), DisputeError> {
+        caller.require_auth();
+
+        let case: DisputeCase = env
+            .storage()
+            .persistent()
+            .get(&DataKey::Dispute(dispute_id))
+            .ok_or(DisputeError::DisputeNotFound)?;
+
+        if case.is_resolved {
+            return Err(DisputeError::DisputeAlreadyResolved);
+        }
+
+        if caller != case.tenant && caller != case.landlord {
+            return Err(DisputeError::Unauthorized);
+        }
+
+        env.events().publish(
+            (symbol_short!("dispute"), symbol_short!("appeal")),
+            (dispute_id, caller, appeal_evidence_hash),
+        );
+
+        Ok(())
     }
 }

@@ -1,4 +1,4 @@
-﻿/**
+/**
  * LumensLease — Stellar & Soroban Protocol Client
  * 
  * Manages connections to Stellar Testnet/Mainnet, Freighter Wallet integration,
@@ -11,7 +11,7 @@ export const STELLAR_CONFIG = {
   sorobanRpcUrl: 'https://soroban-testnet.stellar.org',
   horizonUrl: 'https://horizon-testnet.stellar.org',
   contracts: {
-    rentalEscrow: 'CBJ5ZEXAMPLELUMENSLEASESOROBANRENTALESCROWCONTRACTIDTESTNET',
+    rentalEscrow: 'CBK6CZCHOUNZOPBYZCIVFUVUAVBGIBLUOY3KPB4RQL6ISMQQKJYZYYZE',
     usdcToken: 'CBIELILGBCNV64VUXTUTLPR3G75O3UXZ2C5S2S3VEXAMPLEUSDCID',
   },
   supportedAssets: [

@@ -64,7 +64,7 @@ export default function TenancyAgreementModal() {
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <ShieldCheck size={18} color="#15803d" />
             <span style={{ fontSize: '0.85rem', fontWeight: 700, letterSpacing: '-0.02em', color: '#0f172a' }}>
-              LOCKHOUSE DIRECT TENANCY AGREEMENT · ₦0 COMMISSION STATUTORY DRAFT
+              LUMENSLEASE DIRECT TENANCY AGREEMENT · ₦0 COMMISSION STATUTORY DRAFT
             </span>
           </div>
 
@@ -109,7 +109,7 @@ export default function TenancyAgreementModal() {
               DIRECT OWNER-TO-TENANT CONTRACT • ₦0 MIDDLEMAN COMMISSION • ACCREDITED SOLICITOR PROTOCOL
             </div>
             <div style={{ fontSize: '0.75rem', fontFamily: 'monospace', color: '#64748b', marginTop: '4px' }}>
-              LOCKHOUSE CONTRACT REF: LH-OYO-{prop.id.toUpperCase()}-2026 • JURISDICTION: OYO STATE COURTS
+              LUMENSLEASE CONTRACT REF: LL-OYO-{prop.id.toUpperCase()}-2026 • JURISDICTION: OYO STATE COURTS
             </div>
           </div>
 
@@ -214,7 +214,7 @@ export default function TenancyAgreementModal() {
                 <strong>RENT & TENURE:</strong> The Tenant pays to the Landlord the direct annual rent of <strong>₦{prop.annualRent.toLocaleString()}</strong> for a fixed term of ONE (1) YEAR commencing on <strong>{commencementDate}</strong>.
               </li>
               <li>
-                <strong>ZERO MIDDLEMAN COMMISSION CLAUSE:</strong> Both parties acknowledge and agree that this tenancy was arranged directly through LockHouse. <strong>No agency fees (0%), legal markup fees (0%), or middleman inspection fees</strong> have been charged or paid.
+                <strong>ZERO MIDDLEMAN COMMISSION CLAUSE:</strong> Both parties acknowledge and agree that this tenancy was arranged directly through LumensLease. <strong>No agency fees (0%), legal markup fees (0%), or middleman inspection fees</strong> have been charged or paid. Caution deposit is secured in a non-custodial Soroban escrow on Stellar.
               </li>
               <li>
                 <strong>INFRASTRUCTURE & POWER COVENANT:</strong>
@@ -270,7 +270,7 @@ export default function TenancyAgreementModal() {
               fontSize: '0.75rem',
               color: '#166534'
             }}>
-              🔒 VERIFIED SECURE • PROCESSED BY LOCKHOUSE ON AWS BEDROCK • DIRECT COMMISSION ELIMINATED
+              🔒 VERIFIED SECURE • PROCESSED BY LUMENSLEASE ON STELLAR & SOROBAN ESCROW • DIRECT COMMISSION ELIMINATED
             </div>
           </div>
         </div>

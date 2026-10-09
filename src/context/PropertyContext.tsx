@@ -66,11 +66,11 @@ export const PropertyProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   // Load from localStorage on client mount only
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      const savedProps = localStorage.getItem('lockhouse_properties');
+      const savedProps = localStorage.getItem('lumenslease_properties') || localStorage.getItem('lockhouse_properties');
       if (savedProps) {
         try { setProperties(JSON.parse(savedProps)); } catch (e) { console.error(e); }
       }
-      const savedChats = localStorage.getItem('lockhouse_chats');
+      const savedChats = localStorage.getItem('lumenslease_chats') || localStorage.getItem('lockhouse_chats');
       if (savedChats) {
         try { setChatMessages(JSON.parse(savedChats)); } catch (e) { console.error(e); }
       }
@@ -83,13 +83,13 @@ export const PropertyProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   // Sync properties to local storage
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      localStorage.setItem('lockhouse_properties', JSON.stringify(properties));
+      localStorage.setItem('lumenslease_properties', JSON.stringify(properties));
     }
   }, [properties]);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      localStorage.setItem('lockhouse_chats', JSON.stringify(chatMessages));
+      localStorage.setItem('lumenslease_chats', JSON.stringify(chatMessages));
     }
   }, [chatMessages]);
 

@@ -43,13 +43,13 @@ export default function Navbar() {
             }}>
               <Home size={22} strokeWidth={2.5} />
               <span className="mono" style={{ fontWeight: 900, fontSize: '1.25rem', letterSpacing: '0.05em' }}>
-                LOCKHOUSE
+                LUMENSLEASE
               </span>
             </div>
             
             <div style={{ display: 'flex', flexDirection: 'column' }}>
               <span style={{ fontSize: '0.75rem', color: 'var(--amber-light)', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-                0% AGENT CUT • DIRECT LANDLORD TRUST
+                0% AGENT CUT • STELLAR & SOROBAN ESCROW
               </span>
               <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
                 Lock in your verified home. Lock out the middleman.
@@ -137,15 +137,15 @@ export default function Navbar() {
                 cursor: 'pointer',
                 transition: 'all 0.15s ease'
               }}
-              title="Click to view AWS Telemetry & Connection Proof"
+              title="Click to view Stellar & Soroban Protocol Telemetry"
             >
               <div className="pulse-dot" />
               <div style={{ display: 'flex', flexDirection: 'column' }}>
                 <span className="mono" style={{ fontSize: '0.7rem', color: 'var(--teal-light)', fontWeight: 800 }}>
-                  AWS CONNECTED
+                  STELLAR TESTNET
                 </span>
                 <span style={{ fontSize: '0.62rem', color: 'var(--text-muted)' }}>
-                  us-east-1 • Bedrock
+                  Soroban Escrow • Live
                 </span>
               </div>
             </div>
@@ -153,7 +153,7 @@ export default function Navbar() {
         </div>
       </header>
 
-      {/* AWS Telemetry Modal */}
+      {/* Stellar & Soroban Protocol Modal */}
       {showAwsModal && (
         <div style={{
           position: 'fixed',
@@ -173,14 +173,14 @@ export default function Navbar() {
         >
           <div
             className="retro-window"
-            style={{ maxWidth: '540px', width: '100%' }}
+            style={{ maxWidth: '560px', width: '100%' }}
             onClick={(e) => e.stopPropagation()}
           >
             <div className="window-header">
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <Server size={16} color="var(--teal-primary)" />
+                <ShieldCheck size={16} color="var(--teal-primary)" />
                 <span className="mono" style={{ fontSize: '0.85rem', fontWeight: 700 }}>
-                  AWS ZERO-TO-SHIPPED CONSOLE TELEMETRY
+                  LUMENSLEASE PROTOCOL & NETWORK TELEMETRY
                 </span>
               </div>
               <button
@@ -203,25 +203,31 @@ export default function Navbar() {
                 flexDirection: 'column',
                 gap: '8px'
               }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <span style={{ color: 'var(--text-muted)' }}>AWS Account ID:</span>
-                  <span style={{ color: 'var(--amber-light)', fontWeight: 700 }}>{awsConnection.accountId}</span>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <span style={{ color: 'var(--text-muted)' }}>Deployed Soroban Contract:</span>
+                  <span style={{ color: 'var(--amber-light)', fontWeight: 700, fontSize: '0.75rem', wordBreak: 'break-all' }}>
+                    CBK6CZCHOUNZOPBYZCIVFUVUAVBGIBLUOY3KPB4RQL6ISMQQKJYZYYZE
+                  </span>
+                  <a
+                    href="https://stellar.expert/explorer/testnet/contract/CBK6CZCHOUNZOPBYZCIVFUVUAVBGIBLUOY3KPB4RQL6ISMQQKJYZYYZE"
+                    target="_blank"
+                    rel="noreferrer"
+                    style={{ color: 'var(--teal-light)', fontSize: '0.72rem', textDecoration: 'underline' }}
+                  >
+                    View Contract on Stellar Expert →
+                  </a>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '6px' }}>
+                  <span style={{ color: 'var(--text-muted)' }}>Network:</span>
+                  <span style={{ color: 'var(--teal-light)' }}>Test SDF Network (Testnet)</span>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <span style={{ color: 'var(--text-muted)' }}>Active Region:</span>
-                  <span style={{ color: 'var(--teal-light)' }}>{awsConnection.region}</span>
+                  <span style={{ color: 'var(--text-muted)' }}>Settlement Currencies:</span>
+                  <span style={{ color: 'var(--emerald-light)' }}>Stellar USDC • cNGN • XLM</span>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <span style={{ color: 'var(--text-muted)' }}>AI Coding Agent:</span>
-                  <span style={{ color: 'var(--emerald-light)' }}>Antigravity 2.0 (DeepMind)</span>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <span style={{ color: 'var(--text-muted)' }}>Bedrock Agent Model:</span>
-                  <span style={{ color: 'var(--text-primary)' }}>Anthropic Claude 3.5 Sonnet</span>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <span style={{ color: 'var(--text-muted)' }}>Console Identity:</span>
-                  <span style={{ color: 'var(--text-primary)' }}>arn:aws:iam::{awsConnection.accountId}:root</span>
+                  <span style={{ color: 'var(--text-muted)' }}>Account Abstraction:</span>
+                  <span style={{ color: 'var(--text-primary)' }}>Freighter & Passkey Kit Ready</span>
                 </div>
               </div>
 
@@ -236,7 +242,7 @@ export default function Navbar() {
               }}>
                 <CheckCircle2 size={24} color="var(--emerald-primary)" />
                 <div style={{ fontSize: '0.8rem', color: 'var(--text-primary)' }}>
-                  <strong>Hackathon Ship Gate Verified:</strong> Coding agent verified connection to AWS Console via AWS STS and deployed to AWS live infrastructure.
+                  <strong>Autonomous Escrow Protection:</strong> Security deposits are escrowed directly on Soroban. Landlords cannot unilaterally confiscate funds; peaceful move-outs automatically refund tenants.
                 </div>
               </div>
 
@@ -245,7 +251,7 @@ export default function Navbar() {
                 className="retro-btn retro-btn-amber"
                 style={{ width: '100%', marginTop: '6px' }}
               >
-                Close Telemetry Panel
+                Close Protocol Panel
               </button>
             </div>
           </div>

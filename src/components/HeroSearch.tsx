@@ -87,7 +87,7 @@ export default function HeroSearch() {
             <div className="window-dot dot-green" />
           </div>
           <span className="mono" style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-            LOCKHOUSE TERMINAL // PROPERTY & INFRASTRUCTURE MATCHER
+            LUMENSLEASE TERMINAL // STELLAR PROPERTY & ESCROW MATCHER
           </span>
           <span className="mono" style={{ fontSize: '0.72rem', color: 'var(--teal-light)' }}>
             STATUS: ACTIVE

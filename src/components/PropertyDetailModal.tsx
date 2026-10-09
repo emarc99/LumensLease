@@ -258,7 +258,7 @@ export default function PropertyDetailModal() {
             </div>
           </div>
 
-          {/* EXTORTION COMPARISON: STREET AGENT VS LOCKHOUSE */}
+          {/* EXTORTION COMPARISON: STREET AGENT VS LUMENSLEASE */}
           <div style={{
             background: 'rgba(15, 23, 42, 0.8)',
             border: '2px solid var(--emerald-primary)',
@@ -299,7 +299,7 @@ export default function PropertyDetailModal() {
                 <div style={{ textDecoration: 'line-through', color: 'var(--coral-accent)' }}>
                   ₦{agencyFeeTraditional.toLocaleString()}
                 </div>
-                <div style={{ color: 'var(--emerald-light)', fontWeight: 800 }}>₦0 ON LOCKHOUSE</div>
+                <div style={{ color: 'var(--emerald-light)', fontWeight: 800 }}>₦0 ON LUMENSLEASE</div>
               </div>
 
               <div style={{ background: 'rgba(0,0,0,0.4)', padding: '10px', borderRadius: '4px', border: '1px solid var(--border-subtle)' }}>

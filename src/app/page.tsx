@@ -232,7 +232,7 @@ function parseSearchQuery(rawQuery: string) {
               <em>Skip the drama.</em>
             </h1>
             <p className="hero-copy">
-              LockHouse helps you rent directly from verified owners, with the power, water, and security facts middleman agents usually hide.
+              LumensLease helps you rent directly from verified owners, with your caution deposit secured inside Soroban smart contracts on Stellar. 0% middleman extortion.
             </p>
             <div className="hero-actions">
               <a href="#homes" className="btn btn-primary">
@@ -253,7 +253,7 @@ function parseSearchQuery(rawQuery: string) {
             </div>
 
             <div className="savings">{displaySavings}</div>
-            <small>agent & inspection fees saved by LockHouse renters</small>
+            <small>agent & inspection fees saved by LumensLease renters</small>
 
             <div className="stat-row">
               <div className="stat">

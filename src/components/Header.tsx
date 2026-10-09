@@ -15,7 +15,7 @@ export default function Header() {
     <>
       <header className="topbar">
         <Link href="/" className="brand">
-          <span className="brand-mark">⌂</span> LOCKHOUSE
+          <span className="brand-mark">⌂</span> LUMENSLEASE
         </Link>
 
         <nav className="navlinks">
@@ -29,14 +29,14 @@ export default function Header() {
             Messages
           </Link>
 
-          {/* AWS Zero to Shipped Telemetry HUD Pill */}
+          {/* Stellar Soroban Protocol HUD Pill */}
           <button
             onClick={() => setShowTelemetryModal(true)}
             className="aws-telemetry-btn"
-            title="Click to inspect live AWS cloud telemetry & proof of AI agent connection"
+            title="Click to inspect live Stellar Testnet contract and Soroban escrow protocol"
           >
             <span className="aws-dot" />
-            <span>AWS: us-east-1 (LOS50-P5)</span>
+            <span>Stellar: Testnet (Soroban)</span>
           </button>
 
           <Link href="/studio" className="nav-cta">
@@ -45,14 +45,14 @@ export default function Header() {
         </nav>
       </header>
 
-      {/* AWS Cloud Telemetry HUD Modal */}
+      {/* Stellar & Soroban Protocol HUD Modal */}
       {showTelemetryModal && (
         <div className="modal-overlay" onClick={() => setShowTelemetryModal(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '560px' }}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '580px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px', borderBottom: '1px solid var(--line)', paddingBottom: '12px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <Cloud size={20} color="var(--orange)" />
-                <h3 style={{ fontSize: '18px', fontWeight: 800, margin: 0 }}>AWS Zero to Shipped Telemetry HUD</h3>
+                <Shield size={20} color="var(--orange)" />
+                <h3 style={{ fontSize: '18px', fontWeight: 800, margin: 0 }}>LumensLease Protocol & Network HUD</h3>
               </div>
               <button
                 onClick={() => setShowTelemetryModal(false)}
@@ -65,34 +65,44 @@ export default function Header() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', fontSize: '13px' }}>
               <div style={{ background: '#f8fafc', padding: '12px', borderRadius: '6px', border: '1px solid var(--line)' }}>
                 <span style={{ color: 'var(--muted)', fontSize: '11px', display: 'block', textTransform: 'uppercase', fontFamily: 'var(--font-mono)' }}>
-                  AWS Caller Identity (STS Verified)
+                  Soroban Rental Escrow Contract (Testnet)
                 </span>
-                <code style={{ fontSize: '12px', color: 'var(--blue)', fontWeight: 700 }}>
-                  arn:aws:iam::226579698869:root (Account: 226579698869)
+                <code style={{ fontSize: '11px', color: 'var(--blue)', fontWeight: 700, wordBreak: 'break-all' }}>
+                  CBK6CZCHOUNZOPBYZCIVFUVUAVBGIBLUOY3KPB4RQL6ISMQQKJYZYYZE
                 </code>
+                <div style={{ marginTop: '8px' }}>
+                  <a
+                    href="https://stellar.expert/explorer/testnet/contract/CBK6CZCHOUNZOPBYZCIVFUVUAVBGIBLUOY3KPB4RQL6ISMQQKJYZYYZE"
+                    target="_blank"
+                    rel="noreferrer"
+                    style={{ fontSize: '11px', color: 'var(--orange)', textDecoration: 'underline', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                  >
+                    View Verified Contract on Stellar Expert <ExternalLink size={12} />
+                  </a>
+                </div>
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
                 <div style={{ background: '#f8fafc', padding: '10px', borderRadius: '6px', border: '1px solid var(--line)' }}>
-                  <span style={{ color: 'var(--muted)', fontSize: '11px', display: 'block' }}>AWS Region</span>
-                  <strong>us-east-1 (N. Virginia)</strong>
+                  <span style={{ color: 'var(--muted)', fontSize: '11px', display: 'block' }}>Network</span>
+                  <strong>Test SDF Network (Testnet)</strong>
                 </div>
                 <div style={{ background: '#f8fafc', padding: '10px', borderRadius: '6px', border: '1px solid var(--line)' }}>
-                  <span style={{ color: 'var(--muted)', fontSize: '11px', display: 'block' }}>CloudFront POP</span>
-                  <strong>LOS50-P5 (Lagos, Nigeria)</strong>
+                  <span style={{ color: 'var(--muted)', fontSize: '11px', display: 'block' }}>Settlement Assets</span>
+                  <strong>Stellar USDC • cNGN • XLM</strong>
                 </div>
                 <div style={{ background: '#f8fafc', padding: '10px', borderRadius: '6px', border: '1px solid var(--line)' }}>
-                  <span style={{ color: 'var(--muted)', fontSize: '11px', display: 'block' }}>Distribution ID</span>
-                  <strong style={{ fontFamily: 'var(--font-mono)' }}>E25APX0VCRR5EM</strong>
+                  <span style={{ color: 'var(--muted)', fontSize: '11px', display: 'block' }}>Wallet Standard</span>
+                  <strong>Freighter & Passkey Kit</strong>
                 </div>
                 <div style={{ background: '#f8fafc', padding: '10px', borderRadius: '6px', border: '1px solid var(--line)' }}>
-                  <span style={{ color: 'var(--muted)', fontSize: '11px', display: 'block' }}>AI Bedrock Agent</span>
-                  <strong style={{ color: 'var(--green)' }}>Active & Connected</strong>
+                  <span style={{ color: 'var(--muted)', fontSize: '11px', display: 'block' }}>Edge Acceleration</span>
+                  <strong style={{ color: 'var(--green)' }}>CloudFront LOS50 Edge (Lagos)</strong>
                 </div>
               </div>
 
-              <div style={{ background: '#fffbeb', border: '1px solid #fef3c7', padding: '12px', borderRadius: '6px', color: '#92400e', fontSize: '12px' }}>
-                <span style={{ fontWeight: 700 }}>Verified Edge Architecture:</span> Statically exported Next.js 16 SPA deployed on Amazon S3 website hosting with worldwide CloudFront edge acceleration for sub-100ms West African response times.
+              <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', padding: '12px', borderRadius: '6px', color: '#14532d', fontSize: '12px' }}>
+                <span style={{ fontWeight: 700 }}>Zero Extortion Escrow Architecture:</span> Caution deposits are non-custodial and locked inside Soroban smart contracts. Landlords cannot unilaterally confiscate deposits, guaranteeing automated refunds upon peaceful vacancy.
               </div>
             </div>
 

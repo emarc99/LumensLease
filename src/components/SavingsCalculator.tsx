@@ -28,7 +28,7 @@ export default function SavingsCalculator() {
           The True Cost of Street Agents
         </h2>
         <p className="hero-copy" style={{ maxWidth: '640px', margin: '0 auto' }}>
-          In Lagos and Ibadan, middleman agents tack on up to <strong>20%–30%</strong> in mandatory agency, legal drafting, and inspection fees. See exactly what LockHouse saves you.
+          In Lagos and Ibadan, middleman agents tack on up to <strong>20%–30%</strong> in mandatory agency, legal drafting, and inspection fees. See exactly what LumensLease saves you.
         </p>
       </div>
 
@@ -124,7 +124,7 @@ export default function SavingsCalculator() {
             </div>
           </div>
 
-          {/* LockHouse Direct Model */}
+          {/* LumensLease Direct Model */}
           <div style={{
             background: '#f0fdf4',
             border: '2px solid #bbf7d0',
@@ -136,7 +136,7 @@ export default function SavingsCalculator() {
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <CheckCircle2 size={18} color="#16a34a" />
-              <strong style={{ fontSize: '0.95rem', color: '#166534' }}>LockHouse Direct Model</strong>
+              <strong style={{ fontSize: '0.95rem', color: '#166534' }}>LumensLease Direct Model</strong>
             </div>
 
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.88rem' }}>

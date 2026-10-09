@@ -1,5 +1,5 @@
 /**
- * Client-Side Computer Vision Engine for LockHouse
+ * Client-Side Computer Vision Engine for LumensLease
  * Analyzes uploaded property images directly in the browser using HTML5 Canvas pixel inspection,
  * aspect ratio analysis, luminance/edge profiling, and hardware feature detection.
  * Zero external API keys needed - 100% secure and client-safe.

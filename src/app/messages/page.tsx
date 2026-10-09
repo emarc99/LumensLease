@@ -133,7 +133,7 @@ function MessagesContent() {
             <div className="panel" style={{ marginTop: 16 }}>
               <div className="panel-label">Zero-Fee Inspection</div>
               <p style={{ fontSize: '0.85rem', color: '#697386', margin: '8px 0 12px' }}>
-                LockHouse inspections are 100% free. You meet the verified landlord directly at the gate.
+                LumensLease inspections are 100% free. You meet the verified landlord directly at the gate.
               </p>
               <button
                 className="btn btn-primary"

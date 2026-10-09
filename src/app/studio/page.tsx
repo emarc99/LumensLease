@@ -351,7 +351,7 @@ export default function StudioPage() {
         yearsAsOwner: 15,
         avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=80',
         phoneMasked: '+234 803 *** 8219',
-        bio: 'Direct property owner listed via LockHouse Voice Studio. 0% middleman cut.'
+        bio: 'Direct property owner listed via LumensLease Voice Studio. 0% middleman cut.'
       },
       aiAuditNotes: auditResult?.auditNotes || [
         '✓ Conlog Single-Phase Prepaid Meter Verified',
@@ -394,7 +394,7 @@ export default function StudioPage() {
         {publishedSuccess ? (
           <div className="panel" style={{ textAlign: 'center', padding: '50px 20px' }}>
             <CheckCircle2 size={48} color="var(--green)" style={{ margin: '0 auto 16px' }} />
-            <h2 style={{ fontSize: '26px', marginBottom: '8px', fontFamily: 'var(--font-display)' }}>Your property is live on LockHouse!</h2>
+            <h2 style={{ fontSize: '26px', marginBottom: '8px', fontFamily: 'var(--font-display)' }}>Your property is live on LumensLease!</h2>
             <p style={{ color: 'var(--muted)', marginBottom: '24px' }}>0% agent fees. Tenants can now inspect the property and message you directly.</p>
             <Link href="/" className="btn btn-primary">
               View on live feed →
@@ -575,7 +575,7 @@ export default function StudioPage() {
                 className="btn btn-primary"
                 style={{ width: '100%', justifyContent: 'center', marginTop: '12px' }}
               >
-                Publish to LockHouse (0% Commission) <Check size={15} />
+                Publish to LumensLease (0% Commission) <Check size={15} />
               </button>
             </div>
 

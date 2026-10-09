@@ -3,9 +3,9 @@ import "../index.css";
 import Providers from "../components/Providers";
 
 export const metadata: Metadata = {
-  title: "LockHouse — Lock in your verified home. Lock out the middleman.",
-  description: "Direct-to-landlord rental intelligence on AWS. 0% middleman agent fees, verified 24/7 power & borehole water scorecard, and direct owner matching.",
-  keywords: ["LockHouse", "rental", "Nigeria", "Lagos", "Abuja", "direct landlord", "no agent fee", "solar inverter", "prepaid meter", "AWS"],
+  title: "LumensLease — Decentralized Rental Trust & Escrow on Stellar",
+  description: "Direct-to-landlord rental trust and caution deposit escrow on Soroban & Stellar. 0% middleman agent fees, verified light scorecards, and trustless security deposit refunds.",
+  keywords: ["LumensLease", "Stellar", "Soroban", "escrow", "caution deposit", "rental", "Nigeria", "direct landlord", "no agent fee", "smart contract"],
   icons: {
     icon: "data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🏠</text></svg>",
   },

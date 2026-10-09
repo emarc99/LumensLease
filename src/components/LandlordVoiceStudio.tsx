@@ -376,7 +376,7 @@ export default function LandlordVoiceStudio() {
         yearsAsOwner: 14,
         avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=80',
         phoneMasked: '+234 803 *** 8219',
-        bio: 'Direct property owner registered on LockHouse. Zero middleman fees.'
+        bio: 'Direct property owner registered on LumensLease. Zero middleman fees.'
       },
       aiAuditNotes: notes
     });
@@ -732,7 +732,7 @@ export default function LandlordVoiceStudio() {
                   style={{ padding: '16px', fontSize: '1.05rem', justifyContent: 'center' }}
                 >
                   <CheckCircle2 size={20} color="#000" />
-                  <span>Publish to LockHouse Feed (0% Commission)</span>
+                  <span>Publish to LumensLease Feed (0% Commission)</span>
                 </button>
               </div>
             ) : (

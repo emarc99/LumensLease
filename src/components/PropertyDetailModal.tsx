@@ -1,14 +1,26 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useProperty } from '../context/PropertyContext';
+import { useWallet } from '../context/WalletContext';
 import { 
   Zap, Droplet, Shield, Gauge, MessageSquare, Check, X, 
-  UserCheck, AlertTriangle, FileCheck, ArrowRight, ShieldCheck 
+  UserCheck, FileCheck, ShieldCheck, 
+  Star, Award, CheckCircle2, Cpu, Loader2
 } from 'lucide-react';
+import { invokeSubmitTenantReview, STELLAR_CONFIG } from '../lib/stellar';
+import Link from 'next/link';
 
 export default function PropertyDetailModal() {
   const { selectedProperty, setSelectedProperty, setActiveChatProperty, setActiveAgreementProperty } = useProperty();
+  const { walletState, connectDemoWallet } = useWallet();
+
+  const [showReviewModal, setShowReviewModal] = useState(false);
+  const [selectedRating, setSelectedRating] = useState(5);
+  const [reviewNote, setReviewNote] = useState('Excellent landlord, prompt solar maintenance and zero caution deposit hassle.');
+  const [isSubmittingReview, setIsSubmittingReview] = useState(false);
+  const [reviewSuccess, setReviewSuccess] = useState(false);
+  const [currentTrustScore, setCurrentTrustScore] = useState(94);
 
   if (!selectedProperty) return null;
 
@@ -17,6 +29,38 @@ export default function PropertyDetailModal() {
   const agreementFeeTraditional = prop.annualRent * 0.10;
   const inspectionFeeTraditional = 15000;
   const totalMiddlemanExtortion = agencyFeeTraditional + agreementFeeTraditional + inspectionFeeTraditional;
+
+  const cautionAmountXlm = Math.round((prop.annualRent * 0.10) / 1000);
+  const monthlyRentXlm = Math.round(prop.monthlyEquivalent / 1000);
+
+  const handleSubmitReview = async () => {
+    setIsSubmittingReview(true);
+    try {
+      let tenantAddr = walletState.publicKey;
+      if (!tenantAddr) {
+        await connectDemoWallet();
+        tenantAddr = 'GCYOXL5QRSZGHEKMVQTGB4MMMTOQGZAJXS5BSREYIVH46LHCKFKOMD6G';
+      }
+
+      const res = await invokeSubmitTenantReview(
+        tenantAddr || 'GCYOXL5QRSZGHEKMVQTGB4MMMTOQGZAJXS5BSREYIVH46LHCKFKOMD6G',
+        'GCEZWKCA5VLDNRLN3RPRJMRZOX3Z6G5CHCGSNFHEYVXM3XOJMDS6AQ46',
+        selectedRating,
+        reviewNote
+      );
+
+      setCurrentTrustScore(res.newTrustScore);
+      setReviewSuccess(true);
+      setTimeout(() => {
+        setReviewSuccess(false);
+        setShowReviewModal(false);
+      }, 2000);
+    } catch (err) {
+      console.error('Failed to submit review:', err);
+    } finally {
+      setIsSubmittingReview(false);
+    }
+  };
 
   return (
     <div style={{
@@ -85,7 +129,6 @@ export default function PropertyDetailModal() {
                   style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                 />
 
-                {/* Top Vignette Darkening Scrim for Badge Contrast */}
                 <div style={{
                   position: 'absolute',
                   top: 0,
@@ -97,7 +140,6 @@ export default function PropertyDetailModal() {
                   zIndex: 2
                 }} />
 
-                {/* Badges Over Main Dossier Image */}
                 <div style={{
                   position: 'absolute',
                   top: '12px',
@@ -148,8 +190,6 @@ export default function PropertyDetailModal() {
                         ? `${prop.utility.inverterCapacityKva}kVA SOLAR BACKED`
                         : prop.utility.backupPowerType === 'solar_inverter' || prop.utility.backupPowerType === 'hybrid'
                         ? 'SOLAR INVERTER BACKED'
-                        : prop.utility.backupPowerType === 'generator'
-                        ? 'CENTRAL GENERATOR BACKED'
                         : `${prop.utility.gridHoursPerDay}H DAILY IBEDC GRID`}
                     </span>
                   </span>
@@ -215,19 +255,25 @@ export default function PropertyDetailModal() {
                   <div className="mono" style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--amber-light)' }}>
                     ₦{prop.annualRent.toLocaleString()}
                   </div>
+                  <div style={{ fontSize: '0.72rem', color: '#38bdf8' }}>
+                    Caution Deposit: {cautionAmountXlm} XLM (Soroban Escrow)
+                  </div>
                 </div>
 
                 <div style={{ textAlign: 'right' }}>
                   <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
-                    MONTHLY BREAKDOWN
+                    MONTHLY STREAMING
                   </span>
-                  <div className="mono" style={{ fontSize: '1rem', color: 'var(--text-primary)' }}>
-                    ₦{prop.monthlyEquivalent.toLocaleString()} /mo
+                  <div className="mono" style={{ fontSize: '1rem', color: '#10b981', fontWeight: 700 }}>
+                    ~{monthlyRentXlm} XLM /mo
+                  </div>
+                  <div style={{ fontSize: '0.72rem', color: '#94a3b8' }}>
+                    ₦{prop.monthlyEquivalent.toLocaleString()} equivalent
                   </div>
                 </div>
               </div>
 
-              {/* Landlord Trust Box */}
+              {/* Landlord Trust Box with On-Chain Reputation */}
               <div style={{
                 background: 'rgba(18, 23, 34, 0.6)',
                 border: '1px solid var(--border-bold)',
@@ -243,15 +289,60 @@ export default function PropertyDetailModal() {
                   style={{ width: '48px', height: '48px', borderRadius: '50%', border: '2px solid var(--amber-primary)', objectFit: 'cover' }}
                 />
                 <div style={{ flex: 1 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <span style={{ fontWeight: 700, fontSize: '0.95rem' }}>{prop.landlord.name}</span>
-                    <UserCheck size={16} color="var(--emerald-primary)" />
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span style={{ fontWeight: 700, fontSize: '0.95rem' }}>{prop.landlord.name}</span>
+                      <UserCheck size={16} color="var(--emerald-primary)" />
+                    </div>
+
+                    {/* On-Chain Trust Badge */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px', background: 'rgba(52, 211, 153, 0.15)', padding: '2px 8px', borderRadius: '4px' }}>
+                      <Award size={13} color="#34d399" />
+                      <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#34d399' }}>
+                        {currentTrustScore}/100 Trust Score
+                      </span>
+                    </div>
                   </div>
+
                   <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                    Direct Property Owner • {prop.landlord.yearsAsOwner} years title history
+                    Direct Property Owner • {prop.landlord.yearsAsOwner} years title history • Soroban Rep Verified
                   </div>
-                  <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginTop: '4px', fontStyle: 'italic' }}>
-                    "{prop.landlord.bio}"
+
+                  <div style={{ display: 'flex', gap: '8px', marginTop: '6px' }}>
+                    <button
+                      onClick={() => setShowReviewModal(true)}
+                      style={{
+                        background: '#1e293b',
+                        border: '1px solid #334155',
+                        color: '#f8fafc',
+                        padding: '4px 10px',
+                        borderRadius: '4px',
+                        fontSize: '0.72rem',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        fontWeight: 600
+                      }}
+                    >
+                      <Star size={11} color="#f59e0b" /> Submit On-Chain Review
+                    </button>
+
+                    <Link
+                      href="/passport"
+                      onClick={() => setSelectedProperty(null)}
+                      style={{
+                        fontSize: '0.72rem',
+                        color: '#38bdf8',
+                        textDecoration: 'none',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        fontWeight: 600
+                      }}
+                    >
+                      Qualify for Monthly Rent →
+                    </Link>
                   </div>
                 </div>
               </div>
@@ -385,7 +476,7 @@ export default function PropertyDetailModal() {
             </div>
           </div>
 
-          {/* AI AUDIT NOTES */}
+          {/* HARDWARE COMPUTER VISION AUDIT */}
           <div style={{
             background: 'rgba(10, 13, 20, 0.8)',
             border: '1px solid var(--border-bold)',
@@ -395,9 +486,14 @@ export default function PropertyDetailModal() {
             flexDirection: 'column',
             gap: '8px'
           }}>
-            <span className="mono" style={{ fontSize: '0.75rem', color: 'var(--teal-light)', fontWeight: 700 }}>
-              🤖 AWS BEDROCK COMPUTER VISION AUDIT FINDINGS:
-            </span>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <span className="mono" style={{ fontSize: '0.75rem', color: 'var(--teal-light)', fontWeight: 700 }}>
+                🔍 COMPUTER VISION HARDWARE AUDIT FINDINGS (BOUND TO ON-CHAIN SHA-256 DIGEST):
+              </span>
+              <span style={{ fontSize: '0.7rem', color: '#10b981', fontWeight: 700 }}>
+                ✓ Cryptographically Bound
+              </span>
+            </div>
             {prop.aiAuditNotes.map((note, idx) => (
               <div key={idx} style={{ fontSize: '0.82rem', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <span>{note}</span>
@@ -432,7 +528,7 @@ export default function PropertyDetailModal() {
               style={{ padding: '12px 18px' }}
             >
               <FileCheck size={16} />
-              <span>Draft Tenancy Agreement (₦0 Commission)</span>
+              <span>Draft Tenancy Agreement & SBT Deed</span>
             </button>
 
             <button
@@ -448,7 +544,138 @@ export default function PropertyDetailModal() {
             </button>
           </div>
         </div>
+
+        {/* On-Chain Landlord Review Modal */}
+        {showReviewModal && (
+          <div
+            style={{
+              position: 'fixed',
+              inset: 0,
+              backgroundColor: 'rgba(0, 0, 0, 0.85)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              zIndex: 200,
+              padding: '20px'
+            }}
+            onClick={() => setShowReviewModal(false)}
+          >
+            <div
+              style={{
+                width: '100%',
+                maxWidth: '460px',
+                backgroundColor: '#0c111d',
+                border: '1px solid #1e293b',
+                borderRadius: '12px',
+                padding: '20px',
+                color: '#f8fafc',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '14px'
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <h4 style={{ margin: 0, fontSize: '1rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <Star size={16} color="#f59e0b" />
+                  Rate {prop.landlord.name} on Soroban
+                </h4>
+                <button
+                  onClick={() => setShowReviewModal(false)}
+                  style={{ background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer' }}
+                >
+                  <X size={16} />
+                </button>
+              </div>
+
+              <p style={{ margin: 0, fontSize: '0.8rem', color: '#94a3b8' }}>
+                Your review is recorded on the <code>LandlordReputationContract</code> and dynamically updates the landlord's trust score on Stellar Testnet.
+              </p>
+
+              <div>
+                <label style={{ fontSize: '0.78rem', color: '#cbd5e1', fontWeight: 600, display: 'block', marginBottom: '6px' }}>
+                  Star Rating (1 - 5)
+                </label>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <button
+                      key={star}
+                      type="button"
+                      onClick={() => setSelectedRating(star)}
+                      style={{
+                        background: star <= selectedRating ? '#f59e0b' : '#1e293b',
+                        border: 'none',
+                        borderRadius: '6px',
+                        padding: '8px 14px',
+                        color: star <= selectedRating ? '#000' : '#cbd5e1',
+                        fontWeight: 800,
+                        cursor: 'pointer'
+                      }}
+                    >
+                      {star} ★
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label style={{ fontSize: '0.78rem', color: '#cbd5e1', fontWeight: 600, display: 'block', marginBottom: '6px' }}>
+                  Review Notes
+                </label>
+                <textarea
+                  value={reviewNote}
+                  onChange={(e) => setReviewNote(e.target.value)}
+                  rows={3}
+                  style={{
+                    width: '100%',
+                    backgroundColor: '#131b2e',
+                    border: '1px solid #334155',
+                    borderRadius: '6px',
+                    color: '#f8fafc',
+                    padding: '8px',
+                    fontSize: '0.82rem'
+                  }}
+                />
+              </div>
+
+              {reviewSuccess ? (
+                <div style={{ padding: '10px', background: 'rgba(16, 185, 129, 0.2)', color: '#34d399', borderRadius: '6px', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <CheckCircle2 size={16} /> Review recorded on-chain! New score: {currentTrustScore}
+                </div>
+              ) : (
+                <button
+                  onClick={handleSubmitReview}
+                  disabled={isSubmittingReview}
+                  style={{
+                    backgroundColor: '#0284c7',
+                    border: 'none',
+                    borderRadius: '6px',
+                    color: '#ffffff',
+                    fontWeight: 700,
+                    padding: '10px',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '6px'
+                  }}
+                >
+                  {isSubmittingReview ? (
+                    <>
+                      <Loader2 size={15} className="animate-spin" /> Submitting to Soroban...
+                    </>
+                  ) : (
+                    <>
+                      <Cpu size={15} /> Sign & Record On-Chain Review
+                    </>
+                  )}
+                </button>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
 }
+

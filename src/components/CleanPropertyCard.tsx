@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { BedDouble, Droplets, Heart, Lightbulb, LockKeyhole, ShieldCheck, ArrowRight } from 'lucide-react';
+import { BedDouble, Droplets, Heart, Lightbulb, LockKeyhole, ShieldCheck, ArrowRight, Shield } from 'lucide-react';
 import { PropertyListing } from '../types';
 
 export default function CleanPropertyCard({ property }: { property: PropertyListing }) {
@@ -30,7 +30,9 @@ export default function CleanPropertyCard({ property }: { property: PropertyList
         className="property-photo" 
         style={{ backgroundImage: `url(${property.photos[0] || 'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&w=800&q=80'})` }}
       >
-        <span className="photo-tag">VERIFIED PHOTO</span>
+        <span className="photo-tag" style={{ backgroundColor: '#0284c7', color: '#ffffff', fontWeight: 800 }}>
+          SOROBAN VERIFIED (SCORE: 92/100)
+        </span>
         <button className="save" aria-label={`Save ${property.title}`}>
           <Heart size={15} color="#ef4444" />
         </button>
@@ -53,6 +55,25 @@ export default function CleanPropertyCard({ property }: { property: PropertyList
         <div className="price">
           {formatNaira(property.annualRent)}{' '}
           <span>/ year · {formatNaira(property.monthlyEquivalent)} / month</span>
+        </div>
+
+        {/* Soroban Escrow Protection Indicator */}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            fontSize: '0.75rem',
+            color: '#10b981',
+            fontWeight: 700,
+            marginBottom: '10px',
+            padding: '4px 8px',
+            borderRadius: '4px',
+            backgroundColor: 'rgba(16, 185, 129, 0.08)',
+          }}
+        >
+          <Shield size={13} />
+          Caution Deposit Locked in Soroban Smart Escrow
         </div>
 
         <div className="scorecard">
